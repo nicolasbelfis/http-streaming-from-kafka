@@ -1,5 +1,5 @@
 [![Java CI with Maven](https://github.com/nicolasbelfis/http-streaming-from-kafka/actions/workflows/maven.yml/badge.svg)](https://github.com/nicolasbelfis/http-streaming-from-kafka/actions/workflows/maven.yml)
-[![Sonar scan](https://github.com/nicolasbelfis/http-streaming-from-kafka/actions/workflows/sonar.yml/badge.svg)](https://github.com/nicolasbelfis/http-streaming-from-kafka/actions/workflows/sonar.yml)
+[![Known Vulnerabilities](https://snyk.io/test/github/nicolasbelfis/http-streaming-from-kafka/badge.svg)]
 # Streaming
 
 ## simple streaming service
