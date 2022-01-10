@@ -17,9 +17,11 @@ import java.time.Duration
 
 @RestController
 @RequestMapping("flux")
-class StreamControllerFlux(
+class ControllerFlux(
     @Qualifier("fluxStream")
-    private val streamService: StreamService<String, Flux<String>>
+    private val streamService: StreamService<String, Flux<String>>,
+    private val keepAliveFreq: Int = 20
+
 ) {
 
     @GetMapping("/stream", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
@@ -32,7 +34,7 @@ class StreamControllerFlux(
 
     private fun startSubscription(messages: Flux<ServerSentEvent<String>>): Flux<ServerSentEvent<String>> {
         val messageHeader = Mono.just(ServerSentEvent.builder<String>().comment("subscription started").build())
-        val keepAliveEmitter = keepAliveFluxWithFrequency(Duration.ofSeconds(20))
+        val keepAliveEmitter = keepAliveFluxWithFrequency(Duration.ofSeconds(keepAliveFreq.toLong()))
         return Flux.merge(
             messageHeader,
             messages,

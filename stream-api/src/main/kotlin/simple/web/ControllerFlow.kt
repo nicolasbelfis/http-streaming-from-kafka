@@ -19,11 +19,15 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
+private val MILLISECONDS = 1000
+
 @RestController
 @RequestMapping("flow")
-class StreamControllerFlow(
+class ControllerFlow(
     @Qualifier("flowStream")
-    private val streamService: StreamService<String, Flow<String>>
+    private val streamService: StreamService<String, Flow<String>>,
+    private val keepAliveFreq: Int = 20
+
 ) {
 
     @GetMapping("/stream", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
@@ -36,7 +40,7 @@ class StreamControllerFlow(
     }
 
     private fun startSubscription(messages: Flow<ServerSentEvent<String>>): Flow<ServerSentEvent<String>> {
-        val keepAliveFlow = keepAliveFluxWithFrequency(20)
+        val keepAliveFlow = keepAliveFluxWithFrequency(keepAliveFreq.toLong())
 
         return merge(
             keepAliveFlow,
@@ -46,7 +50,7 @@ class StreamControllerFlow(
 
     private fun keepAliveFluxWithFrequency(timeSeconds: Long) = flow {
         while (true) {
-            delay(timeSeconds * 1000)
+            delay(timeSeconds * MILLISECONDS)
             emit(ServerSentEvent.builder<String>().comment("keep-alive").build())
         }
     }
