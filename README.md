@@ -1,5 +1,4 @@
 [![Java CI with Maven](https://github.com/nicolasbelfis/http-streaming-from-kafka/actions/workflows/maven.yml/badge.svg)](https://github.com/nicolasbelfis/http-streaming-from-kafka/actions/workflows/maven.yml)
-[![Known Vulnerabilities](https://snyk.io/test/github/nicolasbelfis/http-streaming-from-kafka/badge.svg)]
 # Streaming
 
 ## simple streaming service
