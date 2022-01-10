@@ -20,9 +20,9 @@ import java.time.Duration
 class ControllerFlux(
     @Qualifier("fluxStream")
     private val streamService: StreamService<String, Flux<String>>,
-    private val keepAliveFreq: Int = 20
 
 ) {
+    private val keepAliveFreq: Int = 20
 
     @GetMapping("/stream", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
     fun subscribeToStream(): Flux<ServerSentEvent<String>> {

@@ -26,9 +26,9 @@ private val MILLISECONDS = 1000
 class ControllerFlow(
     @Qualifier("flowStream")
     private val streamService: StreamService<String, Flow<String>>,
-    private val keepAliveFreq: Int = 20
 
-) {
+    ) {
+    private val keepAliveFreq: Int = 20
 
     @GetMapping("/stream", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
     fun subscribeToStream(): Flow<ServerSentEvent<String>> {
