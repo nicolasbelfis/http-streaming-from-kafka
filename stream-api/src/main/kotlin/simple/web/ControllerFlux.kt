@@ -1,7 +1,7 @@
 package simple.web
 
 import com.fasterxml.jackson.databind.JsonNode
-import simple.logger.Loggers
+import org.reactivestreams.Publisher
 import simple.streaming.StreamService
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.MediaType
@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.util.Metrics
+import simple.logger.Loggers
+import java.lang.NullPointerException
 import java.time.Duration
 
 @RestController
@@ -21,25 +24,23 @@ class ControllerFlux(
     @Qualifier("fluxStream")
     private val streamService: StreamService<String, Flux<String>>,
 
-) {
-    private val keepAliveFreq: Int = 20
+    ) {
+    private val keepAliveFreq: Duration = Duration.ofSeconds(20L)
 
     @GetMapping("/stream", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
     fun subscribeToStream(): Flux<ServerSentEvent<String>> {
-        val messages = streamService.stream()
-            .map { ServerSentEvent.builder(it.toString()).build() }
-            .onErrorContinue { cause, msg -> Loggers.print("error in stream :$cause, msg : $msg") }
-        return startSubscription(messages)
-    }
-
-    private fun startSubscription(messages: Flux<ServerSentEvent<String>>): Flux<ServerSentEvent<String>> {
-        val messageHeader = Mono.just(ServerSentEvent.builder<String>().comment("subscription started").build())
-        val keepAliveEmitter = keepAliveFluxWithFrequency(Duration.ofSeconds(keepAliveFreq.toLong()))
         return Flux.merge(
-            messageHeader,
-            messages,
-            keepAliveEmitter
+            Mono.just(ServerSentEvent.builder<String>().comment("subscription started").build()),
+            streamService.stream()
+                .map { ServerSentEvent.builder(it.toString()).build() },
+            keepAliveFluxWithFrequency(keepAliveFreq)
         ).log()
+            .onErrorContinue(IllegalArgumentException::class.java) { it, any -> Loggers.print("non problematic error $it") }
+            .onErrorResume(NullPointerException::class.java) {
+                Mono.just(
+                    ServerSentEvent.builder<String>().comment("subscription ended").build()
+                )
+            }
     }
 
     private fun keepAliveFluxWithFrequency(duration: Duration) = Flux.interval(duration)
@@ -50,4 +51,9 @@ class ControllerFlux(
         val message = messageJson.get("message").asText()
         streamService.emit(message)
     }
+}
+
+private fun Flux<ServerSentEvent<String>>.manageErrors(): Flux<ServerSentEvent<String>> {
+    return this
+
 }
