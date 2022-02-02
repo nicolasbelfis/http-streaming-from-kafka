@@ -4,6 +4,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import reactor.core.publisher.Flux
+import simple.web.CancellableException
+import simple.web.NonCancellableException
 import java.lang.NullPointerException
 
 interface StreamService<T, STREAMABLE> {
@@ -31,8 +33,8 @@ class FluxStreamService : StreamService<String, Flux<String>> {
     private var flux: Flux<String> = Flux.create<String> {
         listener = { msg: String -> it.next(msg) }
     }
-        .map { if (it == "null") throw NullPointerException(); it }
-        .map { if (it == "error") throw IllegalArgumentException(); it }
+        .map { if (it == "null") throw CancellableException(NullPointerException()); it }
+        .map { if (it == "error") throw NonCancellableException(Exception()); it }
         .share()
 
     override fun stream(): Flux<String> {
