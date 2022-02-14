@@ -23,10 +23,10 @@ class ControllerTweets(
     private val keepAliveFreq: Duration = Duration.ofSeconds(20L)
 
 
-    @GetMapping("/stream/sse/tweets", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
-    fun subscribeToTwitterStreamSse(): Flux<ServerSentEvent<Tweet>> {
-        return firstNotification<Tweet>()
-            .mergeWith(subscribedTwitterFlux().map { sseData(it) })
+    @GetMapping("/stream/tweets/sse", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
+    fun subscribeToTwitterStreamSse(): Flux<ServerSentEvent<String>> {
+        return firstNotification<String>()
+            .mergeWith(subscribedTwitterFlux().map { sseData(it.text) })
             .mergeWith(keepAliveFlux(keepAliveFreq))
             .onErrorContinue(TwitterStreamUnknownData::class.java) { it, any ->
                 Mono.just(sseComment<Tweet>("unknown message ${it?.message}"))
@@ -40,7 +40,7 @@ class ControllerTweets(
 
     }
 
-    @GetMapping("/stream/tweets", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
+    @GetMapping("/stream/tweets")
     fun subscribeToTwitterStream(): Flux<Tweet> {
         return subscribedTwitterFlux().log()
 
@@ -48,6 +48,11 @@ class ControllerTweets(
 
     private fun subscribedTwitterFlux(): Flux<Tweet> {
         return twitterStreamService.stream()
+//            .publishOn(Schedulers.boundedElastic())
+//            .flatMap {
+//            Thread.sleep(5000)
+//            Mono.just(it)
+//        }
     }
 
 

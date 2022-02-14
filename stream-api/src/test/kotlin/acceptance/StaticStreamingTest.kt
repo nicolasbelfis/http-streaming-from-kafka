@@ -57,7 +57,7 @@ class StaticStreamingTest {
 
         StepVerifier.create(responseBodyFlux)
             .expectNext(ServerSentEvent.builder<String>().comment("subscription started").build().toString())
-            .expectNext(ServerSentEvent.builder<String>("sample data").build().toString())
+            .expectNext(ServerSentEvent.builder("sample data").build().toString())
             .verifyComplete()
     }
 }

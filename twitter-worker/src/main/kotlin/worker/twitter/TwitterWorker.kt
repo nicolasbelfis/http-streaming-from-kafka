@@ -4,43 +4,44 @@ import com.github.scribejava.core.model.Response
 import io.github.redouane59.twitter.IAPIEventListener
 import io.github.redouane59.twitter.TwitterClient
 import io.github.redouane59.twitter.dto.tweet.Tweet
-import io.github.redouane59.twitter.signature.TwitterCredentials
+import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
 import java.util.concurrent.Future
-import java.util.stream.Stream
+import java.util.logging.Logger
 
 
 class TwitterWorker(
-    twitterBearerToken: String,
+    private val twitterClient: TwitterClient,
 ) {
-
     private lateinit var connexion: Future<Response>
 
-    private val twitterClient = TwitterClient(
-        TwitterCredentials.builder()
-            .bearerToken(twitterBearerToken)
-            .build()
-    )
     private val flux: Flux<Tweet> = Flux.create<Tweet> {
+        it.onDispose { stop() }
         connexion = twitterClient.startFilteredStream(TwitterStreamingListener(it))
+
     }.share()
 
-    fun stream() = flux.doOnCancel { this.stop() }
 
-    fun stop() {
-        twitterClient.stopFilteredStream(connexion)
+    fun stream() = flux
+
+    private fun stop() {
+        if(connexion.get().isSuccessful)
+            twitterClient.stopFilteredStream(connexion)
     }
 }
 
 class TwitterStreamingListener(private val listener: FluxSink<Tweet>) : IAPIEventListener {
 
+    private val log = LoggerFactory.getLogger(javaClass)
+
     override fun onStreamError(httpCode: Int, error: String) {
+        log.error("onStreamError")
         listener.error(TwitterStreamError("onStreamError $httpCode, $error"))
     }
 
     override fun onTweetStreamed(tweet: Tweet) {
-        Thread.sleep(500)
+        log.info("tweet received")
         listener.next(tweet)
     }
 
