@@ -14,3 +14,10 @@ post message : `post localhost:8080/flux/message {"message": "your message"}`
 subscribe `get localhost:8080/flow/stream`
 
 post message : `post localhost:8080/flow/message {"message": "your message"}`
+
+
+### simple twitter kafka streaming
+
+start kafka cluster : `docker-compose up`
+
+start TwitterWorkerApplication.kt

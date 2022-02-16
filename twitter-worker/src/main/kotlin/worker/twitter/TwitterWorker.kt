@@ -14,6 +14,8 @@ import java.util.logging.Logger
 class TwitterWorker(
     private val twitterClient: TwitterClient,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
+
     private lateinit var connexion: Future<Response>
 
     private val flux: Flux<Tweet> = Flux.create<Tweet> {
@@ -26,6 +28,7 @@ class TwitterWorker(
     fun stream() = flux
 
     private fun stop() {
+        log.info("stopping twitter connexion")
         if(connexion.get().isSuccessful)
             twitterClient.stopFilteredStream(connexion)
     }

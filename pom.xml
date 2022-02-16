@@ -14,6 +14,7 @@
     <modules>
         <module>stream-api</module>
         <module>twitter-worker</module>
+        <module>twitter-kafka-stream</module>
     </modules>
     <properties>
         <java.version>11</java.version>
