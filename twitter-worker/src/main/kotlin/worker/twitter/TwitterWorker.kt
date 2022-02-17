@@ -28,7 +28,8 @@ class TwitterWorker(
 
     private fun stop() {
         log.info("stopping twitter connection")
-        twitterClient.stopFilteredStream(connexion)
+        if (connexion.get().isSuccessful)
+            twitterClient.stopFilteredStream(connexion)
     }
 }
 
