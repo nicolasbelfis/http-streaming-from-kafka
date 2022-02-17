@@ -1,4 +1,4 @@
-package worker.twitter
+package twitter
 
 import com.github.scribejava.core.model.Response
 import io.github.redouane59.twitter.IAPIEventListener
@@ -8,10 +8,9 @@ import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
 import java.util.concurrent.Future
-import java.util.logging.Logger
 
 
-class TwitterWorker(
+class TwitterClientAdapter(
     private val twitterClient: TwitterClient,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)

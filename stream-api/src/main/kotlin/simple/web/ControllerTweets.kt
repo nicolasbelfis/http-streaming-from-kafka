@@ -8,16 +8,16 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import worker.twitter.TwitterStreamEnded
-import worker.twitter.TwitterStreamError
-import worker.twitter.TwitterStreamUnknownData
-import worker.twitter.TwitterWorker
+import twitter.TwitterClientAdapter
+import twitter.TwitterStreamEnded
+import twitter.TwitterStreamError
+import twitter.TwitterStreamUnknownData
 import java.time.Duration
 
 @RestController
 @Profile("direct-twitter")
 class ControllerTweets(
-    private val twitterStreamService: TwitterWorker
+    private val twitterStreamService: TwitterClientAdapter
 ) {
     private val keepAliveFreq: Duration = Duration.ofSeconds(20L)
 

@@ -4,44 +4,19 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.stream.nico</groupId>
         <artifactId>stream-kafka-twitter</artifactId>
+        <groupId>com.stream.nico</groupId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>twitter-worker</artifactId>
-    <version>${parent.version}</version>
 
-    <properties>
-        <kotlin.version>1.6.10</kotlin.version>
-    </properties>
+    <artifactId>twitter-client-adapter</artifactId>
+    <version>${parent.version}</version>
 
     <dependencies>
         <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-test</artifactId>
-            <version>${kotlin.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
-            <version>2.8.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.rocksdb</groupId>
-            <artifactId>rocksdbjni</artifactId>
-            <version>6.27.3</version>
-        </dependency>
-        <dependency>
-            <groupId>com.stream.nico</groupId>
-            <artifactId>twitter-client-adapter</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>compile</scope>
+            <groupId>io.github.redouane59.twitter</groupId>
+            <artifactId>twittered</artifactId>
+            <version>2.14</version>
         </dependency>
     </dependencies>
 
@@ -83,6 +58,5 @@
             </plugin>
         </plugins>
     </build>
-
 
 </project>

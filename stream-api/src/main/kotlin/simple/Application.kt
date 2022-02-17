@@ -17,7 +17,7 @@ import simple.logger.Loggers
 import simple.streaming.FlowStreamService
 import simple.streaming.FluxStreamService
 import simple.streaming.StreamService
-import worker.twitter.TwitterWorker
+import twitter.TwitterClientAdapter
 
 @SpringBootApplication
 @EnableWebFlux
@@ -46,20 +46,20 @@ class Application {
     @Bean
     fun twitterWorker(
         @Value("\${twitter.bearer}") bearerToken: String
-    ): TwitterWorker {
+    ): TwitterClientAdapter {
         val twitterClient = TwitterClient(
             TwitterCredentials.builder()
                 .bearerToken(bearerToken)
                 .build()
         )
-        val twitterWorker = TwitterWorker(twitterClient)
+        val twitterClientAdapter = TwitterClientAdapter(twitterClient)
         try {
-            twitterWorker.multicastStream().blockFirst()
+            twitterClientAdapter.multicastStream().blockFirst()
         } catch (e: Exception) {
             Loggers.print("cannot start twitter worker, app will close")
             throw e
         }
-        return twitterWorker
+        return twitterClientAdapter
     }
 }
 

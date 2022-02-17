@@ -10,9 +10,9 @@ import org.springframework.boot.CommandLineRunner
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.Bean
+import twitter.TwitterClientAdapter
 import worker.kafka.producer.ReactiveProducer
 import worker.processor.Processor
-import worker.twitter.TwitterWorker
 import java.util.*
 import kotlin.system.exitProcess
 
@@ -28,15 +28,15 @@ class TwitterWorkerApplication {
     @Bean
     fun twitterWorker(
         @Value("\${twitter.bearer}") bearerToken: String
-    ): TwitterWorker {
+    ): TwitterClientAdapter {
         val twitterClient = TwitterClient(
             TwitterCredentials.builder()
                 .bearerToken(bearerToken)
                 .build()
         )
-        val twitterWorker = TwitterWorker(twitterClient)
-        twitterWorker.multicastStream().blockFirst()
-        return twitterWorker
+        val twitterClientAdapter = TwitterClientAdapter(twitterClient)
+        twitterClientAdapter.multicastStream().blockFirst()
+        return twitterClientAdapter
     }
 
     @Bean
@@ -66,13 +66,13 @@ class TwitterWorkerApplication {
 
     @Bean
     fun command(
-        twitterWorker: TwitterWorker,
+        twitterClientAdapter: TwitterClientAdapter,
         reactiveProducer: ReactiveProducer
     ): CommandLineRunner = CommandLineRunner {
 
 
         val stream = Processor(4, 1, 3)
-            .run(twitterWorker, reactiveProducer).doOnSubscribe { it.request(10) }
+            .run(twitterClientAdapter, reactiveProducer).doOnSubscribe { it.request(10) }
             .subscribe(
                 { log.info("message sent to kafka, offset ${it.offset()}") },
                 {

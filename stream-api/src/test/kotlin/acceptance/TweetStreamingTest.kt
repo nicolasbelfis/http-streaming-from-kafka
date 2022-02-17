@@ -16,8 +16,8 @@ import org.springframework.test.web.reactive.server.returnResult
 import reactor.core.publisher.Flux
 import reactor.test.StepVerifier
 import simple.Application
-import worker.twitter.TwitterStreamError
-import worker.twitter.TwitterWorker
+import twitter.TwitterClientAdapter
+import twitter.TwitterStreamError
 
 
 @SpringBootTest(classes = [(Application::class)])
@@ -29,12 +29,12 @@ class TweetStreamingTest {
     private lateinit var webTestClient: WebTestClient
 
     @MockkBean
-    private lateinit var twitterWorker: TwitterWorker
+    private lateinit var twitterClientAdapter: TwitterClientAdapter
 
     @Test
     fun `given a client subscribed to tweets sse, should receive notification and 1 tweet`() {
 
-        every { twitterWorker.multicastStream() } returns Flux.just<Tweet>(FakeTweet("text")).share()
+        every { twitterClientAdapter.multicastStream() } returns Flux.just<Tweet>(FakeTweet("text")).share()
         val responseBodyFlux = webTestClient.get().uri("/stream/tweets/sse")
             .exchange()
             .expectStatus().isOk
@@ -51,7 +51,7 @@ class TweetStreamingTest {
     @Test
     fun `should receive notification and end notification where error`() {
 
-        every { twitterWorker.multicastStream() } returns
+        every { twitterClientAdapter.multicastStream() } returns
             Flux.error(TwitterStreamError("err"))
 
         val responseBodyFlux = webTestClient.get().uri("/stream/tweets/sse")

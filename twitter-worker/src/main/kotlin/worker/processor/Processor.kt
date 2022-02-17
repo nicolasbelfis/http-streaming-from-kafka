@@ -6,17 +6,17 @@ import org.apache.kafka.clients.producer.RecordMetadata
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.util.retry.Retry
+import twitter.TwitterClientAdapter
 import worker.kafka.producer.ReactiveProducer
-import worker.twitter.TwitterWorker
 import java.time.Duration
 
 private val log = LoggerFactory.getLogger("Processor")
 class Processor(private val backPressureBufferElements: Int, private val maxConcurrentProducerRequest: Int, private val maxRetries : Int) {
     fun run(
-        twitterWorker: TwitterWorker,
+        twitterClientAdapter: TwitterClientAdapter,
         reactiveProducer: ReactiveProducer
     ): Flux<RecordMetadata> {
-        return twitterWorker.stream()
+        return twitterClientAdapter.stream()
             .log()
             .onBackpressureBuffer(backPressureBufferElements)
             .flatMap({ reactiveProducer.sendTweetToKafka(it) }, maxConcurrentProducerRequest)
