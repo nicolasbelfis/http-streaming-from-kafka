@@ -54,7 +54,7 @@ class Application {
         )
         val twitterWorker = TwitterWorker(twitterClient)
         try {
-            twitterWorker.stream().blockFirst()
+            twitterWorker.multicastStream().blockFirst()
         } catch (e: Exception) {
             Loggers.print("cannot start twitter worker, app will close")
             throw e

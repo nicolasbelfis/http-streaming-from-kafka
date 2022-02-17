@@ -24,7 +24,7 @@ internal class TwitterWorkerTest {
                 .bearerToken(invalidToken)
                 .build()
         )
-        val retryWhen = TwitterWorker(twitterClient).stream()
+        val retryWhen = TwitterWorker(twitterClient).multicastStream()
             .retryWhen(
                 Retry.indefinitely()
                     .maxAttempts(1L)
@@ -42,7 +42,7 @@ internal class TwitterWorkerTest {
                 .bearerToken(invalidToken)
                 .build()
         )
-        val retryWhen = TwitterWorker(twitterClient).stream()
+        val retryWhen = TwitterWorker(twitterClient).multicastStream()
             .retryWhen(
                 Retry.indefinitely()
                     .maxAttempts(1L)
@@ -58,7 +58,7 @@ internal class TwitterWorkerTest {
 
         every { twitterClientMock.startFilteredStream(any<IAPIEventListener>()) } returns mockk()
         every { twitterClientMock.stopFilteredStream(any()) } returns true
-        val flux = TwitterWorker(twitterClientMock).stream().log()
+        val flux = TwitterWorker(twitterClientMock).multicastStream().log()
         flux.subscribe()
         verify(exactly = 1) { twitterClientMock.startFilteredStream(any<IAPIEventListener>()) }
         flux.subscribe()
@@ -69,7 +69,7 @@ internal class TwitterWorkerTest {
     fun `should close connexion when all subcribers cancelled`() {
         every { twitterClientMock.startFilteredStream(any<IAPIEventListener>()) } returns successfulResponse()
         every { twitterClientMock.stopFilteredStream(any()) } returns true
-        val flux = TwitterWorker(twitterClientMock).stream().log()
+        val flux = TwitterWorker(twitterClientMock).multicastStream().log()
 
         val disposable1 = flux.subscribe()
         val disposable2 = flux.subscribe()

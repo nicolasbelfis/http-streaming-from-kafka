@@ -17,20 +17,18 @@ class TwitterWorker(
     private val log = LoggerFactory.getLogger(javaClass)
 
     private lateinit var connexion: Future<Response>
-
-    private val flux: Flux<Tweet> = Flux.create<Tweet> {
+    private val flux: Flux<Tweet> = Flux.create {
         it.onDispose { stop() }
+        log.info("connecting to twitter...")
         connexion = twitterClient.startFilteredStream(TwitterStreamingListener(it))
+    }
 
-    }.share()
-
-
-    fun stream() = flux
+    fun stream(): Flux<Tweet> = flux
+    fun multicastStream(): Flux<Tweet> = flux.share()
 
     private fun stop() {
-        log.info("stopping twitter connexion")
-        if(connexion.get().isSuccessful)
-            twitterClient.stopFilteredStream(connexion)
+        log.info("stopping twitter connection")
+        twitterClient.stopFilteredStream(connexion)
     }
 }
 
@@ -44,7 +42,7 @@ class TwitterStreamingListener(private val listener: FluxSink<Tweet>) : IAPIEven
     }
 
     override fun onTweetStreamed(tweet: Tweet) {
-        log.info("tweet received")
+        log.info("tweet received ${tweet.id}")
         listener.next(tweet)
     }
 

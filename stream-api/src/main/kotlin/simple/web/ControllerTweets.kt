@@ -1,7 +1,6 @@
 package simple.web
 
 import io.github.redouane59.twitter.dto.tweet.Tweet
-import org.reactivestreams.Publisher
 import org.springframework.context.annotation.Profile
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
@@ -47,7 +46,7 @@ class ControllerTweets(
     }
 
     private fun subscribedTwitterFlux(): Flux<Tweet> {
-        return twitterStreamService.stream()
+        return twitterStreamService.multicastStream()
 //            .publishOn(Schedulers.boundedElastic())
 //            .flatMap {
 //            Thread.sleep(5000)

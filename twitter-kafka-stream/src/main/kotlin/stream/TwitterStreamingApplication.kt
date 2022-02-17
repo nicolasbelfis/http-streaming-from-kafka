@@ -1,4 +1,4 @@
-package worker
+package stream
 
 
 import org.apache.kafka.common.serialization.Serdes
