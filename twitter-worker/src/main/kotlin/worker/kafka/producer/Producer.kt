@@ -1,12 +1,12 @@
 package worker.kafka.producer
 
-import io.github.redouane59.twitter.dto.tweet.Tweet
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 import reactor.core.publisher.MonoSink
+import twitter.tweet.SimpleTweet
 import java.time.Duration
 
 class ReactiveProducer(
@@ -15,7 +15,7 @@ class ReactiveProducer(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun sendTweetToKafka(tweet: Tweet): Mono<RecordMetadata> {
+    fun sendTweetToKafka(tweet: SimpleTweet): Mono<RecordMetadata> {
         return Mono.create<RecordMetadata> {
             callProducer(tweet, it)
         }.doOnError { log.error("error sending message to kafka", it) }
@@ -23,7 +23,7 @@ class ReactiveProducer(
     }
 
     private fun callProducer(
-        tweet: Tweet,
+        tweet: SimpleTweet,
         it: MonoSink<RecordMetadata>
     ) {
         log.info("sending to kafka tweet ${tweet.id}")

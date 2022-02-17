@@ -12,6 +12,7 @@ import twitter.TwitterClientAdapter
 import twitter.TwitterStreamEnded
 import twitter.TwitterStreamError
 import twitter.TwitterStreamUnknownData
+import twitter.tweet.SimpleTweet
 import java.time.Duration
 
 @RestController
@@ -23,9 +24,9 @@ class ControllerTweets(
 
 
     @GetMapping("/stream/tweets/sse", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
-    fun subscribeToTwitterStreamSse(): Flux<ServerSentEvent<String>> {
-        return firstNotification<String>()
-            .mergeWith(subscribedTwitterFlux().map { sseData(it.text) })
+    fun subscribeToTwitterStreamSse(): Flux<ServerSentEvent<SimpleTweet>> {
+        return firstNotification<SimpleTweet>()
+            .mergeWith(subscribedTwitterFlux().map { sseData(it) })
             .mergeWith(keepAliveFlux(keepAliveFreq))
             .onErrorContinue(TwitterStreamUnknownData::class.java) { it, any ->
                 Mono.just(sseComment<Tweet>("unknown message ${it?.message}"))
@@ -40,12 +41,12 @@ class ControllerTweets(
     }
 
     @GetMapping("/stream/tweets")
-    fun subscribeToTwitterStream(): Flux<Tweet> {
+    fun subscribeToTwitterStream(): Flux<SimpleTweet> {
         return subscribedTwitterFlux().log()
 
     }
 
-    private fun subscribedTwitterFlux(): Flux<Tweet> {
+    private fun subscribedTwitterFlux(): Flux<SimpleTweet> {
         return twitterStreamService.multicastStream()
 //            .publishOn(Schedulers.boundedElastic())
 //            .flatMap {

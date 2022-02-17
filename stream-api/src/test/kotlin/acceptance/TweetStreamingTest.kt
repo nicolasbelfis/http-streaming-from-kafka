@@ -1,9 +1,7 @@
 package acceptance
 
 
-import FakeTweet
 import com.ninjasquad.springmockk.MockkBean
-import io.github.redouane59.twitter.dto.tweet.Tweet
 import io.mockk.every
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,6 +16,7 @@ import reactor.test.StepVerifier
 import simple.Application
 import twitter.TwitterClientAdapter
 import twitter.TwitterStreamError
+import twitter.tweet.SimpleTweet
 
 
 @SpringBootTest(classes = [(Application::class)])
@@ -34,7 +33,8 @@ class TweetStreamingTest {
     @Test
     fun `given a client subscribed to tweets sse, should receive notification and 1 tweet`() {
 
-        every { twitterClientAdapter.multicastStream() } returns Flux.just<Tweet>(FakeTweet("text")).share()
+        val simpleTweet = SimpleTweet("id1", "text")
+        every { twitterClientAdapter.multicastStream() } returns Flux.just(simpleTweet).share()
         val responseBodyFlux = webTestClient.get().uri("/stream/tweets/sse")
             .exchange()
             .expectStatus().isOk
@@ -44,7 +44,7 @@ class TweetStreamingTest {
 
         StepVerifier.create(responseBodyFlux)
             .expectNext(ServerSentEvent.builder<String>().comment("subscription started").build().toString())
-            .expectNext(ServerSentEvent.builder("text").build().toString())
+            .expectNext(ServerSentEvent.builder(simpleTweet.toJson()).build().toString())
             .verifyComplete()
     }
 

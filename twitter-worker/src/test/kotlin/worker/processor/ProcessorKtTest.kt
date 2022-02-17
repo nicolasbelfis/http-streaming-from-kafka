@@ -1,6 +1,5 @@
 package worker.processor
 
-import io.github.redouane59.twitter.dto.tweet.Tweet
 import io.mockk.every
 import io.mockk.mockk
 import org.apache.http.client.NonRepeatableRequestException
@@ -12,21 +11,23 @@ import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.test.StepVerifier
 import twitter.TwitterClientAdapter
-import worker.FakeTweet
+import twitter.tweet.SimpleTweet
 import worker.kafka.producer.ReactiveProducer
 import java.time.Duration
 
 internal class ProcessorKtTest {
-
+    private val tweet1 = SimpleTweet("id1", "text")
+    private val tweet2 = SimpleTweet("id2", "text")
+    private val tweet3 = SimpleTweet("id3", "text")
     private val twitterClientAdapter = mockk<TwitterClientAdapter>()
     private val mockProducer = mockk<ReactiveProducer>()
 
     @Test
     fun `should process all element when producer works`() {
 
-        every { twitterClientAdapter.stream() } returns Flux.just(FakeTweet("1"), FakeTweet("2"))
-        every { mockProducer.sendTweetToKafka(FakeTweet("1")) } returns Mono.just(fakeRecordWithOffset(1L))
-        every { mockProducer.sendTweetToKafka(FakeTweet("2")) } returns Mono.just(fakeRecordWithOffset(2L))
+        every { twitterClientAdapter.stream() } returns Flux.just(tweet1, tweet2)
+        every { mockProducer.sendTweetToKafka(tweet1) } returns Mono.just(fakeRecordWithOffset(1L))
+        every { mockProducer.sendTweetToKafka(tweet2) } returns Mono.just(fakeRecordWithOffset(2L))
         val fluxToTest = Processor(1, 1, 1).run(twitterClientAdapter, mockProducer)
 
         StepVerifier.create(fluxToTest)
@@ -39,8 +40,8 @@ internal class ProcessorKtTest {
     @Test
     fun `should discard elements that were pushed down stream but not subscribed`() {
 
-        every { twitterClientAdapter.stream() } returns Flux.just(FakeTweet("1"), FakeTweet("2"))
-        every { mockProducer.sendTweetToKafka(FakeTweet("1")) } returns Mono.defer<RecordMetadata?> {
+        every { twitterClientAdapter.stream() } returns Flux.just(tweet1, tweet2)
+        every { mockProducer.sendTweetToKafka(tweet1) } returns Mono.defer<RecordMetadata?> {
             Mono.error(
                 Exception()
             )
@@ -50,14 +51,14 @@ internal class ProcessorKtTest {
         StepVerifier.create(fluxToTest)
             .expectError()
             .verifyThenAssertThat()
-            .hasDiscarded(FakeTweet("2"))
+            .hasDiscarded(tweet2)
     }
 
     @Test
     fun `should finish in error if all retries failed`() {
 
-        every { twitterClientAdapter.stream() } returns Flux.just(FakeTweet("1"), FakeTweet("2"))
-        every { mockProducer.sendTweetToKafka(FakeTweet("1")) } returns Mono.defer { Mono.error(Exception()) }
+        every { twitterClientAdapter.stream() } returns Flux.just(tweet1, tweet2)
+        every { mockProducer.sendTweetToKafka(tweet1) } returns Mono.defer { Mono.error(Exception()) }
         val fluxToTest = Processor(1, 1, 1).run(twitterClientAdapter, mockProducer)
 
         StepVerifier.create(fluxToTest)
@@ -68,12 +69,11 @@ internal class ProcessorKtTest {
     @Test
     fun `should discard on backpressure`() {
 
-        every { twitterClientAdapter.stream() } returns sevenTweets()
-        every { mockProducer.sendTweetToKafka(FakeTweet("1")) } returns Mono.delay(Duration.ofSeconds(2))
+        every { twitterClientAdapter.stream() } returns threeTweets()
+        every { mockProducer.sendTweetToKafka(tweet1) } returns Mono.delay(Duration.ofSeconds(2))
             .map { println("tweet $it");fakeRecordWithOffset(1L) }
-        every { mockProducer.sendTweetToKafka(FakeTweet("2")) } returns Mono.delay(Duration.ofSeconds(10))
+        every { mockProducer.sendTweetToKafka(tweet2) } returns Mono.delay(Duration.ofSeconds(10))
             .map { println("tweet $it");fakeRecordWithOffset(2L) }
-        every { mockProducer.sendTweetToKafka(FakeTweet("3")) } returns Mono.delay(Duration.ofSeconds(2))
             .map { fakeRecordWithOffset(3L) }
         val fluxToTest = Processor(1, 1, 0)
             .run(twitterClientAdapter, mockProducer)
@@ -85,16 +85,8 @@ internal class ProcessorKtTest {
             .hasDiscardedElements()
     }
 
-    private fun sevenTweets(): Flux<Tweet> =
-        Flux.just(
-            FakeTweet("1"),
-            FakeTweet("2"),
-            FakeTweet("3"),
-            FakeTweet("4"),
-            FakeTweet("5"),
-            FakeTweet("6"),
-            FakeTweet("7"),
-        )
+    private fun threeTweets(): Flux<SimpleTweet> =
+        Flux.just(tweet1, tweet2, tweet3)
 
     private fun fakeRecordWithOffset(offSet: Long) = RecordMetadata(
         TopicPartition("", 1),

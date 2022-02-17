@@ -7,6 +7,7 @@ import io.github.redouane59.twitter.dto.tweet.Tweet
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
+import twitter.tweet.SimpleTweet
 import java.util.concurrent.Future
 
 
@@ -16,14 +17,14 @@ class TwitterClientAdapter(
     private val log = LoggerFactory.getLogger(javaClass)
 
     private lateinit var connexion: Future<Response>
-    private val flux: Flux<Tweet> = Flux.create {
+    private val flux: Flux<SimpleTweet> = Flux.create {
         it.onDispose { stop() }
         log.info("connecting to twitter...")
         connexion = twitterClient.startFilteredStream(TwitterStreamingListener(it))
     }
 
-    fun stream(): Flux<Tweet> = flux
-    fun multicastStream(): Flux<Tweet> = flux.share()
+    fun stream(): Flux<SimpleTweet> = flux
+    fun multicastStream(): Flux<SimpleTweet> = flux.share()
 
     private fun stop() {
         log.info("stopping twitter connection")
@@ -32,7 +33,7 @@ class TwitterClientAdapter(
     }
 }
 
-class TwitterStreamingListener(private val listener: FluxSink<Tweet>) : IAPIEventListener {
+class TwitterStreamingListener(private val listener: FluxSink<SimpleTweet>) : IAPIEventListener {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -43,7 +44,7 @@ class TwitterStreamingListener(private val listener: FluxSink<Tweet>) : IAPIEven
 
     override fun onTweetStreamed(tweet: Tweet) {
         log.info("tweet received ${tweet.id}")
-        listener.next(tweet)
+        listener.next(SimpleTweet(tweet.id, tweet.text))
     }
 
     override fun onUnknownDataStreamed(json: String) {
