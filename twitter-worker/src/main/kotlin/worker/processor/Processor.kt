@@ -7,11 +7,16 @@ import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.util.retry.Retry
 import twitter.TwitterClientAdapter
+import twitter.tweet.SimpleTweet
 import worker.kafka.producer.ReactiveProducer
 import java.time.Duration
 
-private val log = LoggerFactory.getLogger("Processor")
-class Processor(private val backPressureBufferElements: Int, private val maxConcurrentProducerRequest: Int, private val maxRetries : Int) {
+class Processor(
+    private val backPressureBufferElements: Int,
+    private val maxConcurrentProducerRequest: Int,
+    private val maxRetries: Int
+) {
+    private val log = LoggerFactory.getLogger("Processor")
     fun run(
         twitterClientAdapter: TwitterClientAdapter,
         reactiveProducer: ReactiveProducer
@@ -21,8 +26,13 @@ class Processor(private val backPressureBufferElements: Int, private val maxConc
             .onBackpressureBuffer(backPressureBufferElements)
             .flatMap({ reactiveProducer.sendTweetToKafka(it) }, maxConcurrentProducerRequest)
             .doOnError { log.error("error while processing", it) }
-            .doOnDiscard(Tweet::class.java) { log.info("tweet ${it.id} discarded") }
-            .retryWhen(retryStrategy(maxRetries.toLong(),"restarting full stream, will reconnect to twitter, any message not processed is then lost"))
+            .doOnDiscard(SimpleTweet::class.java) { log.info("tweet ${it.id} discarded") }
+            .retryWhen(
+                retryStrategy(
+                    maxRetries.toLong(),
+                    "restarting full stream, will reconnect to twitter, any message not processed is then discarded"
+                )
+            )
 
     }
 

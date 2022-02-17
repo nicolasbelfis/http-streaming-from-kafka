@@ -71,8 +71,11 @@ class TwitterWorkerApplication {
     ): CommandLineRunner = CommandLineRunner {
 
 
-        val stream = Processor(4, 1, 3)
-            .run(twitterClientAdapter, reactiveProducer).doOnSubscribe { it.request(10) }
+        val backPressureBufferElements = 100
+        val maxConcurrentProducerRequest = 1
+        val maxRetries = 3
+        val stream = Processor(backPressureBufferElements, maxConcurrentProducerRequest, maxRetries)
+            .run(twitterClientAdapter, reactiveProducer)
             .subscribe(
                 { log.info("message sent to kafka, offset ${it.offset()}") },
                 {
