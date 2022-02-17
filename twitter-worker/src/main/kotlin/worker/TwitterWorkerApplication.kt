@@ -2,6 +2,8 @@ package worker
 
 import io.github.redouane59.twitter.TwitterClient
 import io.github.redouane59.twitter.signature.TwitterCredentials
+import org.apache.kafka.clients.producer.KafkaProducer
+import org.apache.kafka.clients.producer.ProducerConfig
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.CommandLineRunner
@@ -11,6 +13,7 @@ import org.springframework.context.annotation.Bean
 import worker.kafka.producer.ReactiveProducer
 import worker.processor.Processor
 import worker.twitter.TwitterWorker
+import java.util.*
 import kotlin.system.exitProcess
 
 
@@ -40,7 +43,26 @@ class TwitterWorkerApplication {
     fun reactiveProducer(
         @Value("\${kafka.topic}") kafkaTopic: String,
         @Value("\${kafka.host}") kafkaHost: String,
-    ) = ReactiveProducer(kafkaHost, kafkaTopic)
+    ) = ReactiveProducer(kafkaTopic, KafkaProducer(getProperties(kafkaHost)))
+
+    private fun getProperties(kafkaHost: String): Properties {
+        val settings = Properties()
+
+        settings[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaHost
+        org.apache.kafka.common.serialization.StringSerializer::class.java
+        settings[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] =
+            org.apache.kafka.common.serialization.StringSerializer::class.java
+        settings[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] =
+            org.apache.kafka.common.serialization.StringSerializer::class.java
+        settings[ProducerConfig.RETRIES_CONFIG] = 3
+        settings[ProducerConfig.MAX_BLOCK_MS_CONFIG] = 2000
+        settings[ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION] = 1
+        settings[ProducerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG] = 200
+        settings[ProducerConfig.SOCKET_CONNECTION_SETUP_TIMEOUT_MAX_MS_CONFIG] = 5000
+        settings[ProducerConfig.SOCKET_CONNECTION_SETUP_TIMEOUT_MS_CONFIG] = 2000
+
+        return settings
+    }
 
     @Bean
     fun command(
@@ -66,4 +88,3 @@ class TwitterWorkerApplication {
             })
     }
 }
-
