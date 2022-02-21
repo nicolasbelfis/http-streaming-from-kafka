@@ -4,6 +4,7 @@ import io.github.redouane59.twitter.dto.tweet.Tweet
 import org.springframework.context.annotation.Profile
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
+import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
@@ -23,7 +24,8 @@ class ControllerTweets(
     private val keepAliveFreq: Duration = Duration.ofSeconds(20L)
 
 
-    @GetMapping("/stream/tweets/sse", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
+    @CrossOrigin
+    @GetMapping("/stream/sseTweets", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
     fun subscribeToTwitterStreamSse(): Flux<ServerSentEvent<SimpleTweet>> {
         return firstNotification<SimpleTweet>()
             .mergeWith(subscribedTwitterFlux().map { sseData(it) })

@@ -17,14 +17,15 @@ class TwitterClientAdapter(
     private val log = LoggerFactory.getLogger(javaClass)
 
     private lateinit var connexion: Future<Response>
-    private val flux: Flux<SimpleTweet> = Flux.create {
-        it.onDispose { stop() }
+    private val flux: Flux<SimpleTweet> = Flux.create { sink ->
+        sink.onDispose { stop() }
         log.info("connecting to twitter...")
-        connexion = twitterClient.startFilteredStream(TwitterStreamingListener(it))
+        connexion = twitterClient.startFilteredStream(TwitterStreamingListener(sink))
     }
+    private val multicastFlux = flux.share()
 
     fun stream(): Flux<SimpleTweet> = flux
-    fun multicastStream(): Flux<SimpleTweet> = flux.share()
+    fun multicastStream(): Flux<SimpleTweet> = multicastFlux
 
     private fun stop() {
         log.info("stopping twitter connection")

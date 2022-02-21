@@ -35,7 +35,7 @@ class TweetStreamingTest {
 
         val simpleTweet = SimpleTweet("id1", "text")
         every { twitterClientAdapter.multicastStream() } returns Flux.just(simpleTweet).share()
-        val responseBodyFlux = webTestClient.get().uri("/stream/tweets/sse")
+        val responseBodyFlux = webTestClient.get().uri("/stream/sseTweets")
             .exchange()
             .expectStatus().isOk
             .returnResult<ServerSentEvent<String>>().responseBody
@@ -54,7 +54,7 @@ class TweetStreamingTest {
         every { twitterClientAdapter.multicastStream() } returns
             Flux.error(TwitterStreamError("err"))
 
-        val responseBodyFlux = webTestClient.get().uri("/stream/tweets/sse")
+        val responseBodyFlux = webTestClient.get().uri("/stream/sseTweets")
             .exchange()
             .expectStatus().isOk
             .returnResult<ServerSentEvent<String>>().responseBody

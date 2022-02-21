@@ -1,33 +1,25 @@
 [![Java CI with Maven](https://github.com/nicolasbelfis/http-streaming-from-kafka/actions/workflows/maven.yml/badge.svg)](https://github.com/nicolasbelfis/http-streaming-from-kafka/actions/workflows/maven.yml)
-# Streaming
+# Streaming twitter with kafka streams and reactor
 
-## simple streaming service
+prerequisites
+- a twitter developer account and replace the bearer token value in file `stream-api/src/main/resources/application.yaml`
+- docker, npm, maven and java installed
 
-### reactor Flux
-    
-subscribe `get localhost:8080/flux/stream`
+## backend
 
-post message : `post localhost:8080/flux/message {"message": "your message"}`
-
-### kotlin Flow
-
-subscribe `get localhost:8080/flow/stream`
-
-post message : `post localhost:8080/flow/message {"message": "your message"}`
-
-
-## stream twitter directly
-
-### pre-requisites
-- have a twitter developer account and replace the bearer token value in file `stream-api/src/main/resources/application.yaml`
-- have maven and java installed
-
+### stream twitter directly
 run `stream-api/src/main/kotlin/simple/Application.kt` with spring profile `direct-twitter`
 
-start streaming event from twitter `curl --location --request GET 'http://localhost:8080/stream/tweets/sse'`
+start streaming event from twitter `curl --location --request GET 'http://localhost:8080/stream/sseTweets'`
 
 ### simple twitter kafka streaming
 
 start kafka cluster : `docker-compose up`
 
 start TwitterWorkerApplication.kt
+
+
+## start frontend
+cd into `cd frontend-app/ui` , run `npm run start`
+
+the app displays only the last 4 tweets received
