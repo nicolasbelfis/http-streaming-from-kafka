@@ -43,7 +43,6 @@ class TweetStreamingTest {
             .take(2)
 
         StepVerifier.create(responseBodyFlux)
-            .expectNext(ServerSentEvent.builder<String>().comment("subscription started").build().toString())
             .expectNext(ServerSentEvent.builder(simpleTweet.toJson()).build().toString())
             .verifyComplete()
     }
@@ -62,7 +61,6 @@ class TweetStreamingTest {
             .take(3)
 
         StepVerifier.create(responseBodyFlux)
-            .expectNext(ServerSentEvent.builder<String>().comment("subscription started").build().toString())
             .expectNext(ServerSentEvent.builder<String>().event("subscription ended, because err").build().toString())
             .verifyComplete()
     }

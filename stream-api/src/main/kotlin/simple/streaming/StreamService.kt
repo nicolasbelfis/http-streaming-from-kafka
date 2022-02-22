@@ -4,8 +4,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import reactor.core.publisher.Flux
-import simple.web.CancellableException
-import simple.web.NonCancellableException
+import simple.web.experimental.CancellableException
+import simple.web.experimental.NonCancellableException
 import java.lang.NullPointerException
 
 interface StreamService<T, STREAMABLE> {

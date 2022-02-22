@@ -1,4 +1,4 @@
-package simple.web
+package simple.web.kafkatweet
 
 import org.springframework.context.annotation.Profile
 import org.springframework.http.MediaType
@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import simple.streaming.TweetConsumer
+import simple.web.sseData
+import simple.web.sseEvent
 import twitter.tweet.SimpleTweet
 
 @RestController
