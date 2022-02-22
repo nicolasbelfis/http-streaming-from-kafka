@@ -44,12 +44,12 @@ export default function App() {
     return (
         <div className="container">
             <div className="row border border-primary">
-                <div className="col-sm">
+                <div className="col-sm-2">
                     <p>stream tweets real time</p>
                     <button className={connected ? "invisible" : "btn-primary"} onClick={() => startStreaming()}>start</button>
                     <button className={connected ? "btn-primary" : "invisible"} onClick={() => stopStreaming()}>stop</button>
                 </div>
-                <div className="col-sm border-1">
+                <div className="col-sm-10 border-1">
                     <TweetList list={tweets}/>
                 </div>
             </div>
