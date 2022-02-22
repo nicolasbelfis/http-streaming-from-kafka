@@ -5,7 +5,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
-import reactor.core.publisher.MonoSink
+import reactor.core.publisher.Sinks
 import twitter.tweet.SimpleTweet
 import java.time.Duration
 
@@ -14,31 +14,19 @@ class ReactiveProducer(
     private val producer: Producer<String, String>,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
-
     fun sendTweetToKafka(tweet: SimpleTweet): Mono<RecordMetadata> {
-        return Mono.create<RecordMetadata> {
-            callProducer(tweet, it)
-        }.doOnError { log.error("error sending message to kafka", it) }
-
-    }
-
-    private fun callProducer(
-        tweet: SimpleTweet,
-        it: MonoSink<RecordMetadata>,
-    ) {
-        log.info("sending to kafka tweet ${tweet.id}")
+        val sink = Sinks.one<RecordMetadata>()
         producer.send(
             ProducerRecord(kafkaTopic, tweet.id, tweet.toJson()),
-            producerCallback(it)
+            producerCallback(sink)
         )
-        log.info("producer called")
-
+        return sink.asMono()
     }
 
-    private fun producerCallback(it: MonoSink<RecordMetadata>) =
+    private fun producerCallback(sink: Sinks.One<RecordMetadata>): (RecordMetadata?, Exception?) -> Unit =
         { r: RecordMetadata?, e: Exception? ->
-            if (e == null) it.success(r)
-            else it.error(e)
+            if (e == null) sink.tryEmitValue(r)
+            else sink.tryEmitError(e)
         }
 
     fun close() {

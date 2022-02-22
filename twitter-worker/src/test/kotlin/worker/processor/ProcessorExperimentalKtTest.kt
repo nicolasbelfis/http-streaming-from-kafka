@@ -15,7 +15,7 @@ import twitter.tweet.SimpleTweet
 import worker.kafka.producer.ReactiveProducer
 import java.time.Duration
 
-internal class ProcessorKtTest {
+internal class ProcessorExperimentalKtTest {
     private val tweet1 = SimpleTweet("id1", "text")
     private val tweet2 = SimpleTweet("id2", "text")
     private val tweet3 = SimpleTweet("id3", "text")
@@ -28,7 +28,7 @@ internal class ProcessorKtTest {
         every { twitterClientAdapter.stream() } returns Flux.just(tweet1, tweet2)
         every { mockProducer.sendTweetToKafka(tweet1) } returns Mono.just(fakeRecordWithOffset(1L))
         every { mockProducer.sendTweetToKafka(tweet2) } returns Mono.just(fakeRecordWithOffset(2L))
-        val fluxToTest = Processor(1, 1, 1).run(twitterClientAdapter, mockProducer)
+        val fluxToTest = ProcessorExperimental(1, 1, 1).run(twitterClientAdapter, mockProducer)
 
         StepVerifier.create(fluxToTest)
             .expectNextMatches { it.offset() == 1L }
@@ -46,7 +46,7 @@ internal class ProcessorKtTest {
                 Exception()
             )
         }.subscribeOn(Schedulers.single())
-        val fluxToTest = Processor(1, 1, 1).run(twitterClientAdapter, mockProducer)
+        val fluxToTest = ProcessorExperimental(1, 1, 1).run(twitterClientAdapter, mockProducer)
 
         StepVerifier.create(fluxToTest)
             .expectError()
@@ -55,15 +55,16 @@ internal class ProcessorKtTest {
     }
 
     @Test
-    fun `should finish in error if all retries failed`() {
+    fun `should finish in error if all retries failed, but not discard elements when flow is synchronous`() {
 
-        every { twitterClientAdapter.stream() } returns Flux.just(tweet1, tweet2)
+        every { twitterClientAdapter.stream() } returns Flux.just(tweet1, tweet2, tweet3)
         every { mockProducer.sendTweetToKafka(tweet1) } returns Mono.defer { Mono.error(Exception()) }
-        val fluxToTest = Processor(1, 1, 1).run(twitterClientAdapter, mockProducer)
+        val fluxToTest = ProcessorExperimental(1, 1, 1).run(twitterClientAdapter, mockProducer)
 
         StepVerifier.create(fluxToTest)
             .expectError(NonRepeatableRequestException::class.java)
-            .verify()
+            .verifyThenAssertThat(Duration.ofSeconds(8))
+            .hasNotDiscardedElements()
     }
 
     @Test
@@ -74,8 +75,8 @@ internal class ProcessorKtTest {
             .map { println("tweet $it");fakeRecordWithOffset(1L) }
         every { mockProducer.sendTweetToKafka(tweet2) } returns Mono.delay(Duration.ofSeconds(10))
             .map { println("tweet $it");fakeRecordWithOffset(2L) }
-            .map { fakeRecordWithOffset(3L) }
-        val fluxToTest = Processor(1, 1, 0)
+//            .map { fakeRecordWithOffset(3L) }
+        val fluxToTest = ProcessorExperimental(1, 1, 0)
             .run(twitterClientAdapter, mockProducer)
 
         StepVerifier.create(fluxToTest)

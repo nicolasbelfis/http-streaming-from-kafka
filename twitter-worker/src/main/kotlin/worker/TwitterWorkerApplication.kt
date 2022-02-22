@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Bean
 import twitter.TwitterClientAdapter
 import worker.kafka.producer.ReactiveProducer
 import worker.processor.Processor
+import worker.processor.ProcessorExperimental
 import java.util.*
 import kotlin.system.exitProcess
 
@@ -71,10 +72,7 @@ class TwitterWorkerApplication {
     ): CommandLineRunner = CommandLineRunner {
 
 
-        val backPressureBufferElements = 100
-        val maxConcurrentProducerRequest = 1
-        val maxRetries = 3
-        val stream = Processor(backPressureBufferElements, maxConcurrentProducerRequest, maxRetries)
+        val stream = Processor()
             .run(twitterClientAdapter, reactiveProducer)
             .subscribe(
                 { log.info("message sent to kafka, offset ${it.offset()}") },
