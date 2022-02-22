@@ -1,5 +1,6 @@
 package worker.kafka.producer
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
@@ -28,7 +29,7 @@ class ReactiveProducer(
     ) {
         log.info("sending to kafka tweet ${tweet.id}")
         producer.send(
-            ProducerRecord(kafkaTopic, tweet.id, tweet.text),
+            ProducerRecord(kafkaTopic, tweet.id, ObjectMapper().writeValueAsString(tweet)),
             producerCallback(it)
         )
         log.info("producer called")

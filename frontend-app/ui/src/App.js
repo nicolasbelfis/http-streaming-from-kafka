@@ -8,6 +8,7 @@ export default function App() {
 
     const [tweets, setTweets] = useState([]);
     const [connexion, setConnexion] = useState({});
+    const [connected, setConnected] = useState(false);
 
 
     function startStreaming() {
@@ -15,14 +16,16 @@ export default function App() {
         sse.onerror = () => {
             // error log here
             // after logging, close the connection
+            setConnected(false)
             sse.close();
         }
         sse.onmessage = e => getRealtimeData(JSON.parse(e.data));
-
         setConnexion(sse)
+        setConnected(true)
     }
 
     function stopStreaming() {
+        setConnected(false)
         connexion.close()
     }
 
@@ -43,8 +46,8 @@ export default function App() {
             <div className="row border border-primary">
                 <div className="col-sm">
                     <p>stream tweets real time</p>
-                    <button onClick={() => startStreaming()}>start</button>
-                    <button onClick={() => stopStreaming()}>stop</button>
+                    <button className={connected ? "invisible" : "btn-primary"} onClick={() => startStreaming()}>start</button>
+                    <button className={connected ? "btn-primary" : "invisible"} onClick={() => stopStreaming()}>stop</button>
                 </div>
                 <div className="col-sm border-1">
                     <TweetList list={tweets}/>

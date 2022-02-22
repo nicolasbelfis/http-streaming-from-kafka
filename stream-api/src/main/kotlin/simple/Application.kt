@@ -1,13 +1,19 @@
 package simple
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.github.redouane59.twitter.TwitterClient
 import io.github.redouane59.twitter.signature.TwitterCredentials
 import kotlinx.coroutines.flow.Flow
+import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.http.client.reactive.ReactorResourceFactory
 import org.springframework.web.reactive.config.EnableWebFlux
@@ -17,7 +23,10 @@ import simple.logger.Loggers
 import simple.streaming.FlowStreamService
 import simple.streaming.FluxStreamService
 import simple.streaming.StreamService
+import simple.streaming.TweetConsumer
 import twitter.TwitterClientAdapter
+import java.util.*
+
 
 @SpringBootApplication
 @EnableWebFlux
@@ -45,7 +54,7 @@ class Application {
     @Profile("direct-twitter")
     @Bean
     fun twitterWorker(
-        @Value("\${twitter.bearer}") bearerToken: String
+        @Value("\${twitter.bearer}") bearerToken: String,
     ): TwitterClientAdapter {
         val twitterClient = TwitterClient(
             TwitterCredentials.builder()
@@ -61,7 +70,43 @@ class Application {
         }
         return twitterClientAdapter
     }
+
+
+    @Profile("kafka-twitter")
+    @Bean
+    fun twitterKafkaWorker(
+        @Value("\${kafka.topic}") kafkaTopic: String,
+        @Value("\${kafka.host}") kafkaHost: String,
+        objectMapper: ObjectMapper
+    ): TweetConsumer {
+        return TweetConsumer(getProperties(kafkaHost), kafkaTopic)
+
+    }
+
+    private fun getProperties(kafkaHost: String): Properties {
+        val settings = Properties()
+
+        settings[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaHost
+        settings[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] =
+            org.apache.kafka.common.serialization.StringDeserializer::class.java
+        settings[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] =
+            org.apache.kafka.common.serialization.StringDeserializer::class.java
+        settings[ConsumerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG] = 200
+        settings[ConsumerConfig.SOCKET_CONNECTION_SETUP_TIMEOUT_MAX_MS_CONFIG] = 5000
+        settings[ConsumerConfig.SOCKET_CONNECTION_SETUP_TIMEOUT_MS_CONFIG] = 2000
+        settings[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = 10000
+        settings[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
+        settings[ConsumerConfig.GROUP_ID_CONFIG] = "twitter-worker-group"
+
+        return settings
+    }
 }
+
+object ObjectMapperKotlin : ObjectMapper(ObjectMapper().apply {
+    registerModule(KotlinModule())
+    registerModule(Jdk8Module())
+    registerModule(JavaTimeModule())
+})
 
 fun main(args: Array<String>) {
     try {

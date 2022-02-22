@@ -8,9 +8,21 @@ prerequisites
 ## backend
 
 ### stream twitter directly
+
 run `stream-api/src/main/kotlin/simple/Application.kt` with spring profile `direct-twitter`
 
 start streaming event from twitter `curl --location --request GET 'http://localhost:8080/stream/sseTweets'`
+
+### stream raw tweets from kafka directly
+
+start kafka cluster : `docker-compose up`
+
+start TwitterWorkerApplication.kt
+
+run `stream-api/src/main/kotlin/simple/Application.kt` with spring profile `kafka-twitter`
+
+start streaming event from kafka `curl --location --request GET 'http://localhost:8080/stream/sseTweets'`
+
 
 ### simple twitter kafka streaming
 

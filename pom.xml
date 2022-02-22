@@ -37,6 +37,10 @@
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-reactor</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-kotlin</artifactId>
+        </dependency>
         <!--        <dependency>-->
         <!--            <groupId>org.jetbrains.kotlin</groupId>-->
         <!--            <artifactId>kotlin-reflect</artifactId>-->
@@ -48,10 +52,6 @@
         <!--        <dependency>-->
         <!--            <groupId>org.springframework.boot</groupId>-->
         <!--            <artifactId>spring-boot-starter-logging</artifactId>-->
-        <!--        </dependency>-->
-        <!--        <dependency>-->
-        <!--            <groupId>com.fasterxml.jackson.module</groupId>-->
-        <!--            <artifactId>jackson-module-kotlin</artifactId>-->
         <!--        </dependency>-->
         <!--        <dependency>-->
         <!--            <groupId>io.vavr</groupId>-->
