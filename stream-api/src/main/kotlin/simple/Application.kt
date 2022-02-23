@@ -102,12 +102,6 @@ class Application {
     }
 }
 
-object ObjectMapperKotlin : ObjectMapper(ObjectMapper().apply {
-    registerModule(KotlinModule())
-    registerModule(Jdk8Module())
-    registerModule(JavaTimeModule())
-})
-
 fun main(args: Array<String>) {
     try {
         val runApplication: ConfigurableApplicationContext = runApplication<Application>(*args)

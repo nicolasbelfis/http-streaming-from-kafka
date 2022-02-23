@@ -33,7 +33,11 @@ class TweetStreamingTest {
     @Test
     fun `given a client subscribed to tweets sse, should receive notification and 1 tweet`() {
 
-        val simpleTweet = SimpleTweet("id1", "text")
+        val simpleTweet = SimpleTweet("id1",
+            "text",
+            emptyList(),
+            1,
+            "en")
         every { twitterClientAdapter.multicastStream() } returns Flux.just(simpleTweet).share()
         val responseBodyFlux = webTestClient.get().uri("/stream/sseTweets")
             .exchange()

@@ -44,8 +44,7 @@ class TwitterStreamingListener(private val listener: FluxSink<SimpleTweet>) : IA
     }
 
     override fun onTweetStreamed(tweet: Tweet) {
-        log.info("tweet received ${tweet.id}")
-        listener.next(SimpleTweet(tweet.id, tweet.text))
+        listener.next(SimpleTweet(tweet.id, tweet.text, tweet.entities.hashtags?.map{ it.text} ?: emptyList(),tweet.retweetCount,tweet.lang))
     }
 
     override fun onUnknownDataStreamed(json: String) {

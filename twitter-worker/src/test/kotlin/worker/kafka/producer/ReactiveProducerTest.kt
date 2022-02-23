@@ -15,12 +15,20 @@ internal class ReactiveProducerTest {
     @Test
     fun sendTweetToKafka() {
 
-        ReactiveProducer("fakeTopic", mockProducer).sendTweetToKafka(SimpleTweet("id", "text")).subscribe()
+        ReactiveProducer("fakeTopic", mockProducer).sendTweetToKafka(SimpleTweet("id",
+            "text",
+            emptyList(),
+            1,
+            "en")).subscribe()
 
 
         val actualList: List<Pair<String, String>> =
             mockProducer.history().map { it.key() to it.value() }
 
-        assertEquals(listOf("id" to SimpleTweet("id", "text").toJson()), actualList)
+        assertEquals(listOf("id" to SimpleTweet("id",
+            "text",
+            emptyList(),
+            1,
+            "en").toJson()), actualList)
     }
 }

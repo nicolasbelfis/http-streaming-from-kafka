@@ -52,6 +52,7 @@ services:
     command: "bash -c 'echo Waiting for Kafka to be ready... && \
                        cub kafka-ready -b kafka:29092 1 20 && \
                        kafka-topics --create --topic tweetsTopic --if-not-exists --bootstrap-server kafka:29092 --partitions 4 --replication-factor 1 && \
+                       kafka-topics --create --topic topic-count --if-not-exists --bootstrap-server kafka:29092 --partitions 4 --replication-factor 1 && \
                        sleep infinity'"
     environment:
       # The following settings are listed here only to satisfy the image's requirements.

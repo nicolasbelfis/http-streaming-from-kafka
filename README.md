@@ -17,18 +17,28 @@ start streaming event from twitter `curl --location --request GET 'http://localh
 
 start kafka cluster : `docker-compose up`
 
-start TwitterWorkerApplication.kt
+#### producing data
+run `twitter-worker/src/main/kotlin/worker/TwitterWorkerApplication.kt`
 
+#### api to listen to topic
 run `stream-api/src/main/kotlin/simple/Application.kt` with spring profile `kafka-twitter`
 
 start streaming event from kafka `curl --location --request GET 'http://localhost:8080/stream/sseTweets'`
 
 
-### simple twitter kafka streaming
+### count twitter per tag with kafka stream
 
 start kafka cluster : `docker-compose up`
 
-start TwitterWorkerApplication.kt
+#### streaming app
+run `twitter-kafka-stream/src/main/kotlin/stream/TwitterStreamingApplication.kt`
+
+#### producer
+run `twitter-worker/src/main/kotlin/worker/TwitterWorkerApplication.kt`
+
+#### api to listen to topic
+TODO()
+
 
 
 ## start frontend

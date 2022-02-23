@@ -16,9 +16,11 @@ import worker.kafka.producer.ReactiveProducer
 import java.time.Duration
 
 internal class ProcessorExperimentalKtTest {
-    private val tweet1 = SimpleTweet("id1", "text")
-    private val tweet2 = SimpleTweet("id2", "text")
-    private val tweet3 = SimpleTweet("id3", "text")
+    private val tweet1 = simpleTweet("id1")
+
+    private val tweet2 = simpleTweet("id2")
+    private val tweet3 = simpleTweet("id3")
+
     private val twitterClientAdapter = mockk<TwitterClientAdapter>()
     private val mockProducer = mockk<ReactiveProducer>()
 
@@ -98,4 +100,11 @@ internal class ProcessorExperimentalKtTest {
         1,
         1
     )
+
+    private fun simpleTweet(id: String) = SimpleTweet(id,
+        "text",
+        emptyList(),
+        1,
+        "en")
+
 }
