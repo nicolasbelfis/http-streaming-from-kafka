@@ -26,7 +26,7 @@ run `stream-api/src/main/kotlin/simple/Application.kt` with spring profile `kafk
 start streaming event from kafka `curl --location --request GET 'http://localhost:8080/stream/sseTweets'`
 
 
-### count twitter per tag with kafka stream
+### count tweets per tag with kafka stream
 
 start kafka cluster : `docker-compose up`
 
@@ -37,11 +37,12 @@ run `twitter-kafka-stream/src/main/kotlin/stream/TwitterStreamingApplication.kt`
 run `twitter-worker/src/main/kotlin/worker/TwitterWorkerApplication.kt`
 
 #### api to listen to topic
-TODO()
+run `stream-api/src/main/kotlin/simple/Application.kt` with spring profile `kafka-twitter`
+
+start streaming event from kafka `curl --location --request GET 'http://localhost:8080/stream/sseTweets?filters={tag1},{tag2},...{tagN}'`
+
 
 
 
 ## start frontend
 cd into `cd frontend-app/ui` , run `npm run start`
-
-the app displays only the last 4 tweets received

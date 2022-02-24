@@ -1,19 +1,18 @@
 package simple
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import io.github.redouane59.twitter.TwitterClient
 import io.github.redouane59.twitter.signature.TwitterCredentials
 import kotlinx.coroutines.flow.Flow
 import org.apache.kafka.clients.consumer.ConsumerConfig
+import org.apache.kafka.common.serialization.Deserializer
+import org.apache.kafka.common.serialization.LongDeserializer
+import org.apache.kafka.common.serialization.StringDeserializer
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.http.client.reactive.ReactorResourceFactory
 import org.springframework.web.reactive.config.EnableWebFlux
@@ -74,23 +73,34 @@ class Application {
 
     @Profile("kafka-twitter")
     @Bean
-    fun twitterKafkaWorker(
-        @Value("\${kafka.topic}") kafkaTopic: String,
-        @Value("\${kafka.host}") kafkaHost: String,
+    fun tweetConsumer(
+        @Value("\${kafka-source.topic}") kafkaTopic: String,
+        @Value("\${kafka-source.host}") kafkaHost: String,
         objectMapper: ObjectMapper
     ): TweetConsumer {
-        return TweetConsumer(getProperties(kafkaHost), kafkaTopic)
+        return TweetConsumer(getProperties(kafkaHost, StringDeserializer::class.java), kafkaTopic)
 
     }
 
-    private fun getProperties(kafkaHost: String): Properties {
+    @Profile("kafka-twitter")
+    @Bean
+    fun countTagConsumer(
+        @Value("\${kafka-count-tags.topic}") kafkaTopic: String,
+        @Value("\${kafka-count-tags.host}") kafkaHost: String,
+        objectMapper: ObjectMapper
+    ): TweetConsumer {
+        return TweetConsumer(getProperties(kafkaHost, LongDeserializer::class.java), kafkaTopic)
+
+    }
+
+    private fun getProperties(kafkaHost: String, valueDeserialiser: Class<out Deserializer<*>>): Properties {
         val settings = Properties()
 
         settings[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaHost
         settings[ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG] =
-            org.apache.kafka.common.serialization.StringDeserializer::class.java
+            StringDeserializer::class.java
         settings[ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG] =
-            org.apache.kafka.common.serialization.StringDeserializer::class.java
+            valueDeserialiser
         settings[ConsumerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG] = 200
         settings[ConsumerConfig.SOCKET_CONNECTION_SETUP_TIMEOUT_MAX_MS_CONFIG] = 5000
         settings[ConsumerConfig.SOCKET_CONNECTION_SETUP_TIMEOUT_MS_CONFIG] = 2000

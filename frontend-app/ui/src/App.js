@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import * as PropTypes from "prop-types";
 import {TweetList} from "./components/TweetList";
+import {CountTag} from "./CountTag";
 
 TweetList.propTypes = {list: PropTypes.arrayOf(PropTypes.any)};
 
@@ -52,6 +53,9 @@ export default function App() {
                 <div className="col-sm-10 border-1">
                     <TweetList list={tweets}/>
                 </div>
+            </div>
+            <div className="row border border-primary">
+                <CountTag />
             </div>
         </div>
     );

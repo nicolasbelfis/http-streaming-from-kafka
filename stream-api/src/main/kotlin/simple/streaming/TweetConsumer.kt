@@ -3,14 +3,11 @@ package simple.streaming
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
-import org.apache.kafka.clients.consumer.ConsumerRecords
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
-import simple.ObjectMapperKotlin
-import twitter.tweet.SimpleTweet
 import java.time.Duration
 import java.util.*
 import java.util.concurrent.Executors
@@ -21,16 +18,16 @@ class TweetConsumer(private val consumerProperties: Properties, private val kafk
 
     private val closingRequest: AtomicBoolean = AtomicBoolean(false)
     private val log = LoggerFactory.getLogger(javaClass)
-    private val sink: Sinks.Many<String> = Sinks.many().multicast().directBestEffort()
+    private val sink: Sinks.Many<Pair<String, String>> = Sinks.many().multicast().directBestEffort()
 
     private val executorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
-    fun stream(): Flux<SimpleTweet> {
+    fun <T> stream(messageHandler: (stringMsg: Pair<String, String>) -> T): Flux<T> {
         return Mono.fromCallable {
             if (sink.currentSubscriberCount() == 0)
                 startConsumerAsync()
         }.flatMapMany { sink.asFlux() }
-            .map { ObjectMapperKotlin.readValue(it, SimpleTweet::class.java) }
+            .map(messageHandler)
             .doOnError { log.error("error", it) }
             .doAfterTerminate { closingRequest.set(true) }
             .doOnCancel {
@@ -47,10 +44,10 @@ class TweetConsumer(private val consumerProperties: Properties, private val kafk
         CoroutineScope(executorCoroutineDispatcher).launch {
             try {
                 while (!closingRequest.get()) {
-                    val consumerRecords: ConsumerRecords<String, String> = kafkaConsumer.poll(Duration.ofSeconds(1))
+                    val consumerRecords = kafkaConsumer.poll(Duration.ofSeconds(1))
 
                     consumerRecords.forEach {
-                        sink.tryEmitNext(it.value())
+                        sink.tryEmitNext(it.key() to it.value())
                     }
                 }
             } catch (e: Exception) {
@@ -64,3 +61,4 @@ class TweetConsumer(private val consumerProperties: Properties, private val kafk
     }
 
 }
+

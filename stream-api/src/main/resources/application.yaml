@@ -1,6 +1,9 @@
 twitter:
   bearer: ??
 
-kafka:
+kafka-source:
   host: localhost:9092
   topic: tweetsTopic
+kafka-count-tags:
+  host: localhost:9092
+  topic: topic-count

@@ -14,7 +14,6 @@ import org.apache.kafka.streams.kstream.Consumed
 import org.apache.kafka.streams.kstream.Grouped
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.KTable
-import org.apache.kafka.streams.kstream.Materialized
 import org.apache.kafka.streams.kstream.Printed
 import org.apache.kafka.streams.kstream.Produced
 import org.apache.kafka.streams.processor.WallclockTimestampExtractor
@@ -45,14 +44,14 @@ class TwitterStreamingApplication {
     }
 
     private fun buildTopology(kafkaTopic: String): Topology {
-        val stringSerde = Serdes.String()
+        val keyDeserialiser = Serdes.String()
 
         val kStreamBuilder = StreamsBuilder()
         val tweetStream: KStream<String, SimpleTweet> =
-            kStreamBuilder.stream(kafkaTopic, Consumed.with(stringSerde, TweetSerde()))
+            kStreamBuilder.stream(kafkaTopic, Consumed.with(keyDeserialiser, TweetSerde()))
 
         val kTable: KTable<String, Long> = tweetStream
-            .flatMap { key, value -> Iterable { value.hashTags.map { KeyValue(key, it) }.listIterator() } }
+            .flatMap { key, value -> Iterable { value.hashTags.map { hTag -> KeyValue(key, hTag) }.listIterator() } }
             .groupBy({ k, hashTag -> hashTag }, Grouped.with(Serdes.String(), Serdes.String())).count()
 
         val countStream: KStream<String, Long> = kTable.toStream()
@@ -82,6 +81,7 @@ class TwitterStreamingApplication {
         settings[StreamsConfig.APPLICATION_ID_CONFIG] = "tweets-streaming"
         settings[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = kafkaHost
         settings[StreamsConfig.STATE_DIR_CONFIG] = "state"
+        settings[StreamsConfig.COMMIT_INTERVAL_MS_CONFIG] = 2000L
         settings[StreamsConfig.DEFAULT_TIMESTAMP_EXTRACTOR_CLASS_CONFIG] = WallclockTimestampExtractor::class.java
         return settings
     }

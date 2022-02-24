@@ -1,3 +1,6 @@
 kafka:
   host: localhost:9092
   topic: tweetsTopic
+
+server:
+  port : 8081

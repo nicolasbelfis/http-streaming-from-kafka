@@ -26,7 +26,8 @@ class ControllerTweets(
     @CrossOrigin
     @GetMapping("/stream/sseTweets", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
     fun subscribeToTwitterStreamSse(): Flux<ServerSentEvent<SimpleTweet>> {
-        return subscribedTwitterFlux().map { sseData(it) }
+        return subscribedTwitterFlux()
+            .map { sseData(it) }
             .onErrorResume(TwitterStreamUnknownData::class.java) {
                 Mono.just(sseComment("unknown message ${it?.message}"))
             }
