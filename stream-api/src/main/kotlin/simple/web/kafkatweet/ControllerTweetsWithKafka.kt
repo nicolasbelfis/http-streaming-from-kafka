@@ -1,5 +1,6 @@
 package simple.web.kafkatweet
 
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Profile
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
@@ -25,6 +26,7 @@ class ControllerTweetsWithKafka(
     private val countTagConsumer: TweetConsumer,
     private val tagCountRepository: TagCountRepository,
 ) {
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @CrossOrigin
     @GetMapping("/stream/sseTweets", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
@@ -57,22 +59,22 @@ class ControllerTweetsWithKafka(
     fun subscribeToCountTagWithState(@RequestParam filters: String): Flux<ServerSentEvent<String>> {
         val tagFilters: List<String> = filters.trim().split(",")
 
-        return Flux.from(tagCountRepository.findTagCountsByTags(tagFilters))
-            .map { it["tag"] to it["count"] }
-            .map { pair -> ObjectMapperKotlin.writeValueAsString(pair) }
-            .map { sseData(it) }
-            .defaultIfEmpty(sseComment("no state"))
-            .flatMap {
-                Flux.merge(
-                    Mono.just(it),
-                    countTagConsumer.stream { pair ->
-                        ObjectMapperKotlin.writeValueAsString(pair)
-                    }.filter { message -> tagFilters.any { message.contains(it) } }
-                        .map { sseData(it) }
-                )
-            }
+        return asyncResultListFromDB(tagFilters)
+            .mergeWith(asyncKafkaConsumer(tagFilters))
             .onErrorResume {
                 Mono.just(sseEvent("subscription ended, because ${it.message}"))
             }
     }
+
+    private fun asyncKafkaConsumer(tagFilters: List<String>) = countTagConsumer.stream { pair ->
+        ObjectMapperKotlin.writeValueAsString(pair)
+    }.filter { message -> tagFilters.any { message.contains(it) } }
+        .map { sseData(it) }
+
+    private fun asyncResultListFromDB(tagFilters: List<String>) =
+        Flux.from(tagCountRepository.findTagCountsByTags(tagFilters))
+            .map { it["_id"] to it["count"] }
+            .map { pair -> ObjectMapperKotlin.writeValueAsString(pair) }
+            .map { sseData(it) }
+            .defaultIfEmpty(ServerSentEvent.builder<String>().comment("no data for these tags").build())
 }

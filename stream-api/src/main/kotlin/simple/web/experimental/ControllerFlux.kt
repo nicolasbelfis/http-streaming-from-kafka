@@ -18,6 +18,7 @@ import simple.web.keepAliveFlux
 import simple.web.sseData
 import simple.web.sseEvent
 import java.time.Duration
+import java.util.concurrent.atomic.AtomicInteger
 
 @RestController
 @RequestMapping("flux")
@@ -46,12 +47,13 @@ class ControllerFlux(
     //mediatype automatically set to event stream
     @GetMapping("/stream/objects")
     fun subscribeToStreamObjects(): Flux<ServerSentEvent<MyMessage>> {
-        return subscribedStaticJsonFlux().map { Thread.sleep(1000);ServerSentEvent.builder(it).build() }
+        val atomicInteger = AtomicInteger(0)
+        return subscribedFlux().map { Thread.sleep(1000);ServerSentEvent.builder(MyMessage(atomicInteger.incrementAndGet(),it.data())).build() }
     }
 
     @GetMapping("/stream/json")
     fun subscribeToStreamJson(): Flux<MyMessage> {
-        return subscribedStaticJsonFlux().map { Thread.sleep(1000);it }
+        return subscribedFlux().map { Thread.sleep(1000);MyMessage(1,it.data()) }
     }
 
     private fun subscribedFlux() = streamService.stream().map { sseData(it.toString()) }
