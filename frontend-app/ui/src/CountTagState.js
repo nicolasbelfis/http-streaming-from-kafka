@@ -15,6 +15,7 @@ export function CountTagState() {
             setConnected(false)
             sse.close();
         }
+        setCount(new Map())
         sse.onmessage = e => getRealtimeData(JSON.parse(e.data));
         setConnexion(sse)
         setConnected(true)
