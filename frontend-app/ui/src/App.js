@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import * as PropTypes from "prop-types";
 import {TweetList} from "./components/TweetList";
 import {CountTag} from "./CountTag";
+import {CountTagState} from "./CountTagState";
 
 TweetList.propTypes = {list: PropTypes.arrayOf(PropTypes.any)};
 
@@ -56,6 +57,9 @@ export default function App() {
             </div>
             <div className="row border border-primary">
                 <CountTag />
+            </div>
+            <div className="row border border-primary">
+                <CountTagState />
             </div>
         </div>
     );

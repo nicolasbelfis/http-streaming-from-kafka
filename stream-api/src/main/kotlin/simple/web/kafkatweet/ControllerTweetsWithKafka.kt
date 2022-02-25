@@ -9,8 +9,10 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import simple.repositories.TagCountRepository
 import simple.streaming.TweetConsumer
 import simple.web.firstNotification
+import simple.web.sseComment
 import simple.web.sseData
 import simple.web.sseEvent
 import twitter.tweet.ObjectMapperKotlin
@@ -21,6 +23,7 @@ import twitter.tweet.SimpleTweet
 class ControllerTweetsWithKafka(
     private val tweetConsumer: TweetConsumer,
     private val countTagConsumer: TweetConsumer,
+    private val tagCountRepository: TagCountRepository,
 ) {
 
     @CrossOrigin
@@ -43,6 +46,31 @@ class ControllerTweetsWithKafka(
             ObjectMapperKotlin.writeValueAsString(it)
         }.filter { message -> filters.trim().split(",").any { message.contains(it) } }
             .map { sseData(it) }
+            .onErrorResume {
+                Mono.just(sseEvent("subscription ended, because ${it.message}"))
+
+            }
+    }
+
+    @CrossOrigin
+    @GetMapping("/streamState/countTags", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
+    fun subscribeToCountTagWithState(@RequestParam filters: String): Flux<ServerSentEvent<String>> {
+        val tagFilters: List<String> = filters.trim().split(",")
+
+        return Flux.from(tagCountRepository.findTagCountsByTags(tagFilters))
+            .map { it["tag"] to it["count"] }
+            .map { pair -> ObjectMapperKotlin.writeValueAsString(pair) }
+            .map { sseData(it) }
+            .defaultIfEmpty(sseComment("no state"))
+            .flatMap {
+                Flux.merge(
+                    Mono.just(it),
+                    countTagConsumer.stream { pair ->
+                        ObjectMapperKotlin.writeValueAsString(pair)
+                    }.filter { message -> tagFilters.any { message.contains(it) } }
+                        .map { sseData(it) }
+                )
+            }
             .onErrorResume {
                 Mono.just(sseEvent("subscription ended, because ${it.message}"))
             }

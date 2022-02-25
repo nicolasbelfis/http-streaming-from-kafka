@@ -61,3 +61,10 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: ignored
     extra_hosts:
       - "moby:127.0.0.1"
+
+  mongo-db:
+    image: mongo
+    ports:
+      - "27017:27017"
+#    command:
+

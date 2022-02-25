@@ -1,6 +1,7 @@
 package simple
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.mongodb.reactivestreams.client.MongoClients
 import io.github.redouane59.twitter.TwitterClient
 import io.github.redouane59.twitter.signature.TwitterCredentials
 import kotlinx.coroutines.flow.Flow
@@ -19,6 +20,7 @@ import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.netty.resources.LoopResources
 import simple.logger.Loggers
+import simple.repositories.TagCountRepository
 import simple.streaming.FlowStreamService
 import simple.streaming.FluxStreamService
 import simple.streaming.StreamService
@@ -76,7 +78,7 @@ class Application {
     fun tweetConsumer(
         @Value("\${kafka-source.topic}") kafkaTopic: String,
         @Value("\${kafka-source.host}") kafkaHost: String,
-        objectMapper: ObjectMapper
+        objectMapper: ObjectMapper,
     ): TweetConsumer {
         return TweetConsumer(getProperties(kafkaHost, StringDeserializer::class.java), kafkaTopic)
 
@@ -87,7 +89,7 @@ class Application {
     fun countTagConsumer(
         @Value("\${kafka-count-tags.topic}") kafkaTopic: String,
         @Value("\${kafka-count-tags.host}") kafkaHost: String,
-        objectMapper: ObjectMapper
+        objectMapper: ObjectMapper,
     ): TweetConsumer {
         return TweetConsumer(getProperties(kafkaHost, LongDeserializer::class.java), kafkaTopic)
 
@@ -109,6 +111,14 @@ class Application {
         settings[ConsumerConfig.GROUP_ID_CONFIG] = "twitter-worker-group"
 
         return settings
+    }
+
+    @Profile("kafka-twitter")
+    @Bean
+    fun mongoRepository(): TagCountRepository {
+
+        return TagCountRepository(MongoClients.create("mongodb://127.0.0.1:27017")
+            .getDatabase("demoTweet"))
     }
 }
 
