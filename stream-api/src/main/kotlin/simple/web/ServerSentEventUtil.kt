@@ -5,7 +5,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Duration
 
-fun <T> sseData(message: T): ServerSentEvent<T> = ServerSentEvent.builder(message).build()
+fun <T> toSSE(message: T): ServerSentEvent<T> = ServerSentEvent.builder(message).build()
 fun <T> sseComment(comment: String): ServerSentEvent<T> = ServerSentEvent.builder<T>().comment(comment).build()
 fun <T> sseEvent(event: String): ServerSentEvent<T> = ServerSentEvent.builder<T>().event(event).build()
 

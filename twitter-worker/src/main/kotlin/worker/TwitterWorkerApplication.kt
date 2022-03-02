@@ -13,7 +13,6 @@ import org.springframework.context.annotation.Bean
 import twitter.TwitterClientAdapter
 import worker.kafka.producer.ReactiveProducer
 import worker.processor.Processor
-import worker.processor.ProcessorExperimental
 import java.util.*
 import kotlin.system.exitProcess
 
@@ -73,7 +72,7 @@ class TwitterWorkerApplication {
 
 
         val stream = Processor()
-            .run(twitterClientAdapter, reactiveProducer)
+            .createProducerPipeline(twitterClientAdapter, reactiveProducer)
             .subscribe(
                 { log.info("message sent to kafka, offset ${it.offset()}") },
                 {

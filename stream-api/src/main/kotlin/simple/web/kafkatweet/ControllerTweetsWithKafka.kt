@@ -13,8 +13,7 @@ import reactor.core.publisher.Mono
 import simple.repositories.TagCountRepository
 import simple.streaming.TweetConsumer
 import simple.web.firstNotification
-import simple.web.sseComment
-import simple.web.sseData
+import simple.web.toSSE
 import simple.web.sseEvent
 import twitter.tweet.ObjectMapperKotlin
 import twitter.tweet.SimpleTweet
@@ -33,8 +32,8 @@ class ControllerTweetsWithKafka(
     fun subscribeToTwitterStreamSse(): Flux<ServerSentEvent<SimpleTweet>> {
         return Flux.merge(
             firstNotification(),
-            tweetConsumer.stream { ObjectMapperKotlin.readValue(it.second, SimpleTweet::class.java) }
-                .map { sseData(it) }
+            tweetConsumer.stream { keyValuePair -> ObjectMapperKotlin.readValue(keyValuePair.second, SimpleTweet::class.java) }
+                .map { toSSE(it) }
                 .onErrorResume {
                     Mono.just(sseEvent("subscription ended, because ${it.message}"))
                 }
@@ -47,7 +46,7 @@ class ControllerTweetsWithKafka(
         return countTagConsumer.stream {
             ObjectMapperKotlin.writeValueAsString(it)
         }.filter { message -> filters.trim().split(",").any { message.contains(it) } }
-            .map { sseData(it) }
+            .map { toSSE(it) }
             .onErrorResume {
                 Mono.just(sseEvent("subscription ended, because ${it.message}"))
 
@@ -69,12 +68,12 @@ class ControllerTweetsWithKafka(
     private fun asyncKafkaConsumer(tagFilters: List<String>) = countTagConsumer.stream { pair ->
         ObjectMapperKotlin.writeValueAsString(pair)
     }.filter { message -> tagFilters.any { message.contains(it) } }
-        .map { sseData(it) }
+        .map { toSSE(it) }
 
     private fun asyncResultListFromDB(tagFilters: List<String>) =
         Flux.from(tagCountRepository.findTagCountsByTags(tagFilters))
             .map { it["_id"] to it["count"] }
             .map { pair -> ObjectMapperKotlin.writeValueAsString(pair) }
-            .map { sseData(it) }
+            .map { toSSE(it) }
             .defaultIfEmpty(ServerSentEvent.builder<String>().comment("no data for these tags").build())
 }

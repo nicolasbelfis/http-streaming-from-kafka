@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import simple.web.sseComment
-import simple.web.sseData
+import simple.web.toSSE
 import simple.web.sseEvent
 import twitter.TwitterClientAdapter
 import twitter.TwitterStreamEnded
@@ -26,8 +26,9 @@ class ControllerTweets(
     @CrossOrigin
     @GetMapping("/stream/sseTweets", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
     fun subscribeToTwitterStreamSse(): Flux<ServerSentEvent<SimpleTweet>> {
-        return subscribedTwitterFlux()
-            .map { sseData(it) }
+
+        return getTwitterStream()
+            .map { tweet -> toSSE(tweet) }
             .onErrorResume(TwitterStreamUnknownData::class.java) {
                 Mono.just(sseComment("unknown message ${it?.message}"))
             }
@@ -42,11 +43,11 @@ class ControllerTweets(
 
     @GetMapping("/stream/tweets")
     fun subscribeToTwitterStream(): Flux<SimpleTweet> {
-        return subscribedTwitterFlux().log()
+        return getTwitterStream().log()
 
     }
 
-    private fun subscribedTwitterFlux(): Flux<SimpleTweet> {
+    private fun getTwitterStream(): Flux<SimpleTweet> {
         return twitterStreamService.multicastStream()
     }
 

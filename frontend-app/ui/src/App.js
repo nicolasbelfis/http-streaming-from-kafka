@@ -31,14 +31,19 @@ export default function App() {
         connexion.close()
     }
 
-    function getRealtimeData(data) {
+    function computeNewState(prevState, data) {
         var newState = []
+        prevState.forEach((value, index) => {
+            if (prevState.length < 4) newState[index] = prevState[index]
+            else if (index > 0 && value !== undefined && index < 4) newState[index - 1] = value
+        })
+        return [...newState, data]
+    }
+
+    function getRealtimeData(data) {
+
         setTweets(prevState => {
-            prevState.forEach((value, index) => {
-                if (prevState.length < 4) newState[index] = prevState[index]
-                else if (index > 0 && value !== undefined && index < 4) newState[index - 1] = value
-            })
-            return [...newState, data]
+            return computeNewState(prevState, data);
 
         })
     }

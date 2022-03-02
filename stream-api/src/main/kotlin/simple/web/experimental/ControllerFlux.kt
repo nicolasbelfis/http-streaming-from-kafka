@@ -15,7 +15,7 @@ import simple.logger.Loggers
 import simple.streaming.StreamService
 import simple.web.firstNotification
 import simple.web.keepAliveFlux
-import simple.web.sseData
+import simple.web.toSSE
 import simple.web.sseEvent
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
@@ -56,7 +56,7 @@ class ControllerFlux(
         return subscribedFlux().map { Thread.sleep(1000);MyMessage(1,it.data()) }
     }
 
-    private fun subscribedFlux() = streamService.stream().map { sseData(it.toString()) }
+    private fun subscribedFlux() = streamService.stream().map { toSSE(it.toString()) }
     private fun subscribedStaticJsonFlux() = Flux.just(MyMessage(1, "hello"), MyMessage(2, "hello2"))
 
 

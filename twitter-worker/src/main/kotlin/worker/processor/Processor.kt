@@ -10,7 +10,7 @@ import java.time.Duration
 
 class Processor {
     private val log = LoggerFactory.getLogger("Processor")
-    fun run(
+    fun createProducerPipeline(
         twitterClientAdapter: TwitterClientAdapter,
         reactiveProducer: ReactiveProducer,
     ): Flux<RecordMetadata> {

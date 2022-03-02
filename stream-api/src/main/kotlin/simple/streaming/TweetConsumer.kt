@@ -13,7 +13,9 @@ import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
-
+/*
+a cold/hot hybrid stream, with multicast and push
+ */
 class TweetConsumer(private val consumerProperties: Properties, private val kafkaTopic: String) {
 
     private val closingRequest: AtomicBoolean = AtomicBoolean(false)

@@ -17,7 +17,7 @@ class ProcessorExperimental(
     private val maxRetries: Int
 ) {
     private val log = LoggerFactory.getLogger("Processor")
-    fun run(
+    fun createProducerPipeline(
         twitterClientAdapter: TwitterClientAdapter,
         reactiveProducer: ReactiveProducer
     ): Flux<RecordMetadata> {
