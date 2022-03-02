@@ -9,12 +9,14 @@ prerequisites
 
 ### stream twitter directly
 ![img.png](img.png)
+
 run `stream-api/src/main/kotlin/simple/Application.kt` with spring profile `direct-twitter`
 
 start streaming event from twitter `curl --location --request GET 'http://localhost:8080/stream/sseTweets'`
 
 ### stream raw tweets from kafka directly
 ![img_1.png](img_1.png)
+
 start kafka cluster : `docker-compose up`
 
 #### producing data
