@@ -15,7 +15,7 @@ run `stream-api/src/main/kotlin/simple/Application.kt` with spring profile `dire
 start streaming event from twitter `curl --location --request GET 'http://localhost:8080/stream/sseTweets'`
 
 ### stream raw tweets from kafka directly
-![img_1.png](img_1.png)
+![img_2.png](img_2.png)
 
 start kafka cluster : `docker-compose up`
 
@@ -30,11 +30,10 @@ start streaming event from kafka `curl --location --request GET 'http://localhos
 
 ### count tweets per tag with kafka stream
 #### without state querying
-![img_2.png](img_2.png)
-
-#### with state querying
 ![img_3.png](img_3.png)
 
+#### with state querying
+![img_4.png](img_4.png)
 start kafka cluster : `docker-compose up`
 
 #### streaming app
