@@ -35,6 +35,7 @@ class ControllerTweetsWithKafka(
             tweetConsumer.stream { keyValuePair -> ObjectMapperKotlin.readValue(keyValuePair.second, SimpleTweet::class.java) }
                 .map { toSSE(it) }
                 .onErrorResume {
+                    log.error("error causing end of stream ",it)
                     Mono.just(sseEvent("subscription ended, because ${it.message}"))
                 }
         )

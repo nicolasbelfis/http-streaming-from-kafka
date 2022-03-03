@@ -11,12 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import simple.logger.Loggers
 import simple.streaming.StreamService
 import simple.web.firstNotification
 import simple.web.keepAliveFlux
-import simple.web.toSSE
 import simple.web.sseEvent
+import simple.web.toSSE
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -37,7 +36,7 @@ class ControllerFlux(
             .log()
             .map { Thread.sleep(1000);it }
             .onErrorContinue(NonCancellableException::class.java) { it, any ->
-                Loggers.print("${it.message} error on stream but continue subscribing")
+                print("${it.message} error on stream but continue subscribing")
             }
             .onErrorResume(CancellableException::class.java) {
                 Mono.just(sseEvent("subscription ended, because ${it.message}"))

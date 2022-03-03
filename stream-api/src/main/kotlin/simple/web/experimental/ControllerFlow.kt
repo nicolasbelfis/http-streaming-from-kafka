@@ -1,8 +1,6 @@
 package simple.web.experimental
 
 import com.fasterxml.jackson.databind.JsonNode
-import simple.logger.Loggers
-import simple.streaming.StreamService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -18,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import simple.streaming.StreamService
 
 private val MILLISECONDS = 1000
 
@@ -34,7 +33,7 @@ class ControllerFlow(
     fun subscribeToStream(): Flow<ServerSentEvent<String>> {
         val messages = streamService.stream()
             .map { ServerSentEvent.builder(it).build() }
-            .catch { cause -> Loggers.print("error in stream :$cause") }
+            .catch { cause -> print("error in stream :$cause") }
         return startSubscription(messages)
 
     }

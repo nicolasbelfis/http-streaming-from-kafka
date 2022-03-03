@@ -30,7 +30,6 @@ class TweetConsumer(private val consumerProperties: Properties, private val kafk
                 startConsumerAsync()
         }.flatMapMany { sink.asFlux() }
             .map(messageHandler)
-            .doOnError { log.error("error", it) }
             .doAfterTerminate { closingRequest.set(true) }
             .doOnCancel {
                 if (sink.currentSubscriberCount() == 1)

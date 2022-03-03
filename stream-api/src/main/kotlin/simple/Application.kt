@@ -9,17 +9,16 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.Deserializer
 import org.apache.kafka.common.serialization.LongDeserializer
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
-import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Profile
 import org.springframework.http.client.reactive.ReactorResourceFactory
 import org.springframework.web.reactive.config.EnableWebFlux
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.netty.resources.LoopResources
-import simple.logger.Loggers
 import simple.repositories.TagCountRepository
 import simple.streaming.FlowStreamService
 import simple.streaming.FluxStreamService
@@ -32,6 +31,7 @@ import java.util.*
 @SpringBootApplication
 @EnableWebFlux
 class Application {
+    private val log = LoggerFactory.getLogger(javaClass)
 
     @Bean(name = ["flowStream"])
     fun flowStream(): StreamService<String, Flow<String>> = FlowStreamService()
@@ -66,7 +66,7 @@ class Application {
         try {
             twitterClientAdapter.multicastStream().blockFirst()
         } catch (e: Exception) {
-            Loggers.print("cannot start twitter worker, app will close")
+            log.error("cannot start twitter worker, app will close",e)
             throw e
         }
         return twitterClientAdapter
@@ -123,10 +123,6 @@ class Application {
 }
 
 fun main(args: Array<String>) {
-    try {
-        val runApplication: ConfigurableApplicationContext = runApplication<Application>(*args)
-    } catch (e: Exception) {
-        Loggers.error(e, "app failed to start")
-    }
+    runApplication<Application>(*args)
 
 }
