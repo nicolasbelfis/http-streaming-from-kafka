@@ -15,7 +15,7 @@ class Processor {
         reactiveProducer: ReactiveProducer,
     ): Flux<RecordMetadata> {
         return twitterClientAdapter.stream()
-            .flatMap { reactiveProducer.sendTweetToKafka(it) }
+            .flatMap { tweet -> reactiveProducer.sendTweetToKafka(tweet) }
             .doOnError { log.error("error while processing", it) }
             .retryWhen(
                 Retry.backoff(Long.MAX_VALUE, Duration.ofSeconds(1))

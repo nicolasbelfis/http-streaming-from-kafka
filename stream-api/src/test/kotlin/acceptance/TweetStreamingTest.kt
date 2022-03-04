@@ -31,7 +31,7 @@ class TweetStreamingTest {
     private lateinit var twitterClientAdapter: TwitterClientAdapter
 
     @Test
-    fun `given a client subscribed to tweets sse, should receive notification and 1 tweet`() {
+    fun `given a client subscribed to tweets sse, should receive 1 tweet`() {
 
         val simpleTweet = SimpleTweet("id1",
             "text",
@@ -44,7 +44,7 @@ class TweetStreamingTest {
             .expectStatus().isOk
             .returnResult<ServerSentEvent<String>>().responseBody
             .map { it.toString() }
-            .take(2)
+            .take(1)
 
         StepVerifier.create(responseBodyFlux)
             .expectNext(ServerSentEvent.builder(simpleTweet.toJson()).build().toString())

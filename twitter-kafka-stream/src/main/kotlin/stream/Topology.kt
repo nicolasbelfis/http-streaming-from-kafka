@@ -8,7 +8,6 @@ import org.apache.kafka.streams.KeyValue
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.Topology
 import org.apache.kafka.streams.kstream.Consumed
-import org.apache.kafka.streams.kstream.ForeachAction
 import org.apache.kafka.streams.kstream.Grouped
 import org.apache.kafka.streams.kstream.KStream
 import org.apache.kafka.streams.kstream.KTable
@@ -17,21 +16,23 @@ import org.apache.kafka.streams.kstream.Produced
 import twitter.tweet.ObjectMapperKotlin
 import twitter.tweet.SimpleTweet
 
-fun buildTopology(kafkaTopic: String, tagCountRepository: TagCountRepository): Topology {
+fun buildTopology(tweetsTopic: String, tagCountRepository: TagCountRepository): Topology {
     val keyDeserialiser = Serdes.String()
 
     val kStreamBuilder = StreamsBuilder()
     val tweetStream: KStream<String, SimpleTweet> =
-        kStreamBuilder.stream(kafkaTopic, Consumed.with(keyDeserialiser, TweetSerde()))
+        kStreamBuilder.stream(tweetsTopic, Consumed.with(keyDeserialiser, TweetSerde()))
 
+    //build state of aggregations
     val kTable: KTable<String, Long> = tweetStream
-        .flatMap { key, value -> Iterable { value.hashTags.map { hTag -> KeyValue(key, hTag) }.listIterator() } }
-        .groupBy({ k, hashTag -> hashTag }, Grouped.with(Serdes.String(), Serdes.String())).count()
+        .flatMap { tweetId, tweet -> Iterable { tweet.hashTags.map { hTag -> KeyValue(tweetId, hTag) }.listIterator() } }
+        .groupBy({ _, hashTag -> hashTag }, Grouped.with(Serdes.String(), Serdes.String())).count()
 
-    val countStream: KStream<String, Long> = kTable.toStream()
-    countStream.to("topic-count", Produced.with(Serdes.String(), Serdes.Long()))
-    countStream.print(Printed.toSysOut())
-    countStream.peek { k, v -> tagCountRepository.update(k, v.toString()) }
+    // send change log of table
+    val tagCountChangeLog: KStream<String, Long> = kTable.toStream()
+    tagCountChangeLog.to("topic-count", Produced.with(Serdes.String(), Serdes.Long()))
+    tagCountChangeLog.print(Printed.toSysOut())
+    tagCountChangeLog.peek { k, v -> tagCountRepository.update(k, v.toString()) }
 
 //        val aggregate: KTable<String, Top3Tags> = countStream.groupByKey()
 //            .aggregate(

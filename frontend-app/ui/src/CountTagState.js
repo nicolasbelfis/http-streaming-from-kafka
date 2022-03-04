@@ -52,7 +52,7 @@ export function CountTagState() {
             </div>
             <div className="col-sm-10 border-1">
                 {displayCount().map((value, index) => <div
-                    key={value.key}>{value.key} counted {value.value} times</div>)}
+                    key={value.key}><span className="fw-bold">{value.key}</span> counted <span className="fw-bold">{value.value}</span> times</div>)}
             </div>
         </>
     );

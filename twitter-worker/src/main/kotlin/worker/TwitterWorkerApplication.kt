@@ -81,6 +81,7 @@ class TwitterWorkerApplication {
                 }
             )
 
+        //shutdown gracefully
         Runtime.getRuntime().addShutdownHook(
             Thread {
                 stream.dispose()

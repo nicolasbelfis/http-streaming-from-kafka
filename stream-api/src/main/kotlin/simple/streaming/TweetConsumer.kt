@@ -24,12 +24,12 @@ class TweetConsumer(private val consumerProperties: Properties, private val kafk
 
     private val executorCoroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
 
-    fun <T> stream(messageHandler: (stringMsg: Pair<String, String>) -> T): Flux<T> {
+    fun <T> stream(messageHandler: (keyValueMessage: Pair<String, String>) -> T): Flux<T> {
         return Mono.fromCallable {
             if (sink.currentSubscriberCount() == 0)
                 startConsumerAsync()
         }.flatMapMany { sink.asFlux() }
-            .map(messageHandler)
+            .map { keyValueMessage -> messageHandler(keyValueMessage) }
             .doAfterTerminate { closingRequest.set(true) }
             .doOnCancel {
                 if (sink.currentSubscriberCount() == 1)

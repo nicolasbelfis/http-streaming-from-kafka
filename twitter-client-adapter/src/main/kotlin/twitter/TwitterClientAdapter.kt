@@ -18,7 +18,7 @@ class TwitterClientAdapter(
 
     private lateinit var connexion: Future<Response>
     private val flux: Flux<SimpleTweet> = Flux.push { sink ->
-        sink.onDispose { disconnect() }
+        sink.onDispose { disconnectTwitter() }
         log.info("connecting to twitter...")
         connexion = twitterClient.startFilteredStream(TwitterStreamingListener(sink))
     }
@@ -27,7 +27,7 @@ class TwitterClientAdapter(
     fun stream(): Flux<SimpleTweet> = flux
     fun multicastStream(): Flux<SimpleTweet> = multicastFlux
 
-    private fun disconnect() {
+    private fun disconnectTwitter() {
         log.info("stopping twitter connection")
         if (connexion.get().isSuccessful)
             twitterClient.stopFilteredStream(connexion)
@@ -39,7 +39,7 @@ class TwitterStreamingListener(private val listener: FluxSink<SimpleTweet>) : IA
     private val log = LoggerFactory.getLogger(javaClass)
 
     override fun onStreamError(httpCode: Int, error: String) {
-        log.error("onStreamError")
+        log.error("onStreamError $httpCode, $error")
         listener.error(TwitterStreamError("onStreamError $httpCode, $error"))
     }
 

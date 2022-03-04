@@ -32,10 +32,13 @@ class ControllerTweetsWithKafka(
     fun subscribeToTwitterStreamSse(): Flux<ServerSentEvent<SimpleTweet>> {
         return Flux.merge(
             firstNotification(),
-            tweetConsumer.stream { keyValuePair -> ObjectMapperKotlin.readValue(keyValuePair.second, SimpleTweet::class.java) }
+            tweetConsumer.stream { keyValuePair ->
+                ObjectMapperKotlin.readValue(keyValuePair.second,
+                    SimpleTweet::class.java)
+            }
                 .map { toSSE(it) }
                 .onErrorResume {
-                    log.error("error causing end of stream ",it)
+                    log.error("error causing end of stream ", it)
                     Mono.just(sseEvent("subscription ended, because ${it.message}"))
                 }
         )
@@ -44,10 +47,7 @@ class ControllerTweetsWithKafka(
     @CrossOrigin
     @GetMapping("/stream/countTags", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
     fun subscribeToCountTag(@RequestParam filters: String): Flux<ServerSentEvent<String>> {
-        return countTagConsumer.stream {
-            ObjectMapperKotlin.writeValueAsString(it)
-        }.filter { message -> filters.trim().split(",").any { message.contains(it) } }
-            .map { toSSE(it) }
+        return countTagStream(extractTagsFromFilters(filters))
             .onErrorResume {
                 Mono.just(sseEvent("subscription ended, because ${it.message}"))
 
@@ -57,24 +57,24 @@ class ControllerTweetsWithKafka(
     @CrossOrigin
     @GetMapping("/streamState/countTags", produces = [(MediaType.TEXT_EVENT_STREAM_VALUE)])
     fun subscribeToCountTagWithState(@RequestParam filters: String): Flux<ServerSentEvent<String>> {
-        val tagFilters: List<String> = filters.trim().split(",")
+        val tagFilters: List<String> = extractTagsFromFilters(filters)
 
         return asyncResultListFromDB(tagFilters)
-            .mergeWith(asyncKafkaConsumer(tagFilters))
+            .mergeWith(countTagStream(tagFilters))
             .onErrorResume {
                 Mono.just(sseEvent("subscription ended, because ${it.message}"))
             }
     }
 
-    private fun asyncKafkaConsumer(tagFilters: List<String>) = countTagConsumer.stream { pair ->
-        ObjectMapperKotlin.writeValueAsString(pair)
-    }.filter { message -> tagFilters.any { message.contains(it) } }
-        .map { toSSE(it) }
+    private fun countTagStream(filters: List<String>) = countTagConsumer.stream { keyValuePair -> keyValuePair }
+        .filter { message -> filters.any { filter -> message.first == filter } }
+        .map { toSSE(ObjectMapperKotlin.writeValueAsString(it)) }
+
+    private fun extractTagsFromFilters(filters: String) = filters.trim().split(",")
 
     private fun asyncResultListFromDB(tagFilters: List<String>) =
         Flux.from(tagCountRepository.findTagCountsByTags(tagFilters))
             .map { it["_id"] to it["count"] }
-            .map { pair -> ObjectMapperKotlin.writeValueAsString(pair) }
-            .map { toSSE(it) }
+            .map { pair -> toSSE(ObjectMapperKotlin.writeValueAsString(pair)) }
             .defaultIfEmpty(ServerSentEvent.builder<String>().comment("no data for these tags").build())
 }
