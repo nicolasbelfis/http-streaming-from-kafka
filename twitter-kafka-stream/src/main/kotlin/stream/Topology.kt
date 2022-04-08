@@ -20,12 +20,17 @@ fun buildTopology(tweetsTopic: String, tagCountRepository: TagCountRepository): 
     val keyDeserialiser = Serdes.String()
 
     val kStreamBuilder = StreamsBuilder()
+    //consume tweets
     val tweetStream: KStream<String, SimpleTweet> =
-        kStreamBuilder.stream(tweetsTopic, Consumed.with(keyDeserialiser, TweetSerde()))
+        kStreamBuilder.stream(tweetsTopic, Consumed.with(keyDeserialiser, genericSerde(SimpleTweet::class.java)))
 
     //build state of aggregations
     val kTable: KTable<String, Long> = tweetStream
-        .flatMap { tweetId, tweet -> Iterable { tweet.hashTags.map { hTag -> KeyValue(tweetId, hTag) }.listIterator() } }
+        .flatMap { tweetId, tweet ->
+            Iterable {
+                tweet.hashTags.map { hTag -> KeyValue(tweetId, hTag) }.listIterator()
+            }
+        }
         .groupBy({ _, hashTag -> hashTag }, Grouped.with(Serdes.String(), Serdes.String())).count()
 
     // send change log of table
@@ -34,31 +39,62 @@ fun buildTopology(tweetsTopic: String, tagCountRepository: TagCountRepository): 
     tagCountChangeLog.print(Printed.toSysOut())
     tagCountChangeLog.peek { k, v -> tagCountRepository.update(k, v.toString()) }
 
-//        val aggregate: KTable<String, Top3Tags> = countStream.groupByKey()
-//            .aggregate(
-//                { Top3Tags(listOf()) },
-//                { tag, count, top3Map ->
-//                    if (top3Map.count.size < 3) Top3Tags(top3Map.count + (tag to count))
-//                    else Top3Tags(
-//                        top3Map.count
-//                            .sortedByDescending { it.second }
-//                            .take(3)
-//                            .map { p -> if (p.second < count) tag to count else p }
-//                    )
-//                }, Materialized.with(Serdes.String(), Top3TagsSerde())
-//            )
-//
-//        aggregate.toStream().print(Printed.toSysOut())
+    val aggregate: KTable<String, Top3Tags> = tweetStream
+        //extract list of tag with lang
+        .flatMap { tweetId, tweet ->
+            Iterable {
+                tweet.hashTags.map { hTag ->
+                    KeyValue(tweet.lang, hTag)
+                }.listIterator()
+            }
+            //group by tag,lang then count
+        }.groupBy { lang, tag -> HtagWithLang(lang, tag) }
+        .count()
+        //emit groups of tag,lang with count
+        .toStream()
+        //re key messages by lang
+        .map { htagWithLang, count -> KeyValue(htagWithLang.lang, htagWithLang.hTag to count) }
+        .groupByKey()
+        //for each lang,compute top3 tags by count
+        .aggregate(
+            { Top3Tags(null, null, null) },
+            { lang, tagCount, top3 -> computeTop3(tagCount.first, tagCount.second, top3) }
+        )
+
     return kStreamBuilder.build()
 }
 
+fun computeTop3(tag: String, count: Long, top3: Top3Tags): Top3Tags {
+    return Top3Tags(
+        compareWithTop(top3.top1, tag, count),
+        if (top3.top2 != null) compareWithTop(top3.top2, tag, count) else null,
+        if (top3.top3 != null) compareWithTop(top3.top3, tag, count) else null,
+    )
+}
 
-class TweetSerde : Serde<SimpleTweet> {
-    override fun serializer(): Serializer<SimpleTweet> =
-        Serializer<SimpleTweet> { s, t -> ObjectMapperKotlin.writeValueAsBytes(t) }
+private fun compareWithTop(top: CountTag?, tag: String, count: Long): CountTag =
+    if (top == null) CountTag(tag, count)
+    else if (top.count < count)
+        CountTag(tag, count)
+    else top
 
-    override fun deserializer(): Deserializer<SimpleTweet> =
-        Deserializer { topic, data -> ObjectMapperKotlin.readValue(data, SimpleTweet::class.java) }
+data class Top3Tags(
+    val top1: CountTag?,
+    val top2: CountTag?,
+    val top3: CountTag?,
+)
+
+data class CountTag(val tag: String, val count: Long)
+
+data class HtagWithLang(val hTag: String, val lang: String)
+
+
+class genericSerde<T>(val clazz: Class<T>) : Serde<T> {
+    override fun serializer(): Serializer<T> =
+        Serializer<T> { s, t -> ObjectMapperKotlin.writeValueAsBytes(t) }
+
+    override fun deserializer(): Deserializer<T> =
+        Deserializer { topic, data -> ObjectMapperKotlin.readValue(data, clazz) }
 
 }
 //
